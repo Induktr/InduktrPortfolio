@@ -8,27 +8,30 @@ export function Header() {
     <header className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/">
-          <a className="text-2xl font-bold">Induktr</a>
+          <span className="text-2xl font-bold cursor-pointer">Induktr</span>
         </Link>
-        
+
         <nav className="flex items-center space-x-8">
           <Link href="/projects">
-            <a className="hover:text-primary transition-colors">Projects</a>
+            <span className="hover:text-primary transition-colors cursor-pointer">Projects</span>
           </Link>
           <Link href="/tools">
-            <a className="hover:text-primary transition-colors">Tools</a>
+            <span className="hover:text-primary transition-colors cursor-pointer">Tools</span>
           </Link>
           <Link href="/blog">
-            <a className="hover:text-primary transition-colors">Blog</a>
+            <span className="hover:text-primary transition-colors cursor-pointer">Blog</span>
           </Link>
-          
+
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" asChild>
-              <a href="https://github.com/induktr" target="_blank" rel="noopener noreferrer">
-                <SiGithub className="h-5 w-5" />
-                <span className="sr-only">GitHub</span>
-              </a>
-            </Button>
+            <a
+              href="https://github.com/induktr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-accent"
+            >
+              <SiGithub className="h-5 w-5" />
+              <span className="sr-only">GitHub</span>
+            </a>
             <ThemeToggle />
           </div>
         </nav>
