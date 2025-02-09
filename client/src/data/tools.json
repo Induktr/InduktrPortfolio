@@ -22,6 +22,21 @@
           "name": "Cursor",
           "icon": "SiCursor",
           "description": "AI-powered code editor for enhanced productivity"
+        },
+        {
+          "name": "Windsurf",
+          "icon": "SiWindows",
+          "description": "Development environment optimization tool"
+        },
+        {
+          "name": "PearAI",
+          "icon": "SiOpenai",
+          "description": "AI-assisted development tool"
+        },
+        {
+          "name": "Aide",
+          "icon": "SiAirplayaudio",
+          "description": "Development assistance and code generation"
         }
       ]
     },
@@ -42,6 +57,61 @@
           "name": "Wappalyzer",
           "icon": "SiWappalyzer",
           "description": "Website technology stack analysis tool"
+        },
+        {
+          "name": "CSS Peeper",
+          "icon": "SiCss3",
+          "description": "Web design element analysis tool"
+        }
+      ]
+    },
+    {
+      "category": "Web Development",
+      "items": [
+        {
+          "name": "WebSim AI",
+          "icon": "SiOpenai",
+          "description": "AI-powered web development assistant"
+        },
+        {
+          "name": "bolt.new",
+          "icon": "SiBolt",
+          "description": "Rapid web development platform"
+        },
+        {
+          "name": "DataButton",
+          "icon": "SiDatadog",
+          "description": "Data integration tool for web development"
+        },
+        {
+          "name": "Srcbook",
+          "icon": "SiSourcegraph",
+          "description": "Source code management and organization"
+        },
+        {
+          "name": "Loveable",
+          "icon": "SiLove2d",
+          "description": "Web design and UX enhancement tool"
+        },
+        {
+          "name": "Momen",
+          "icon": "SiMomenteo",
+          "description": "Web development productivity tool"
+        },
+        {
+          "name": "Purecode",
+          "icon": "SiPurescript",
+          "description": "AI-powered code generation platform"
+        },
+        {
+          "name": "Tempolabs",
+          "icon": "SiOpenai",
+          "description": "Web development acceleration platform"
+        },
+        {
+          "name": "SiteBrew",
+          "icon": "SiOpensourceinitiative",
+          "description": "Website creation and management tool"
         }
       ]
     },
@@ -62,6 +132,61 @@
           "name": "After Effects",
           "icon": "SiAdobeaftereffects",
           "description": "Motion graphics and visual effects software"
+        },
+        {
+          "name": "VLC Media Player",
+          "icon": "SiVlcmediaplayer",
+          "description": "Video conversion and playback tool"
+        },
+        {
+          "name": "Vidu",
+          "icon": "SiVimeo",
+          "description": "Video and animation creation platform"
+        }
+      ]
+    },
+    {
+      "category": "Audio Processing",
+      "items": [
+        {
+          "name": "Eleven Labs",
+          "icon": "SiAudiomack",
+          "description": "Audio effects generation and tools"
+        },
+        {
+          "name": "Audacity",
+          "icon": "SiAudacity",
+          "description": "Professional sound processing software"
+        },
+        {
+          "name": "Fish Audio",
+          "icon": "SiAudiomack",
+          "description": "Neural text-to-speech and voice modeling"
+        }
+      ]
+    },
+    {
+      "category": "Visual Content",
+      "items": [
+        {
+          "name": "Hailuoai",
+          "icon": "SiOpenai",
+          "description": "Visual and graphic enhancement tool"
+        },
+        {
+          "name": "Genmo",
+          "icon": "SiOpenai",
+          "description": "Animation and graphic effects generation"
+        },
+        {
+          "name": "Ideogram",
+          "icon": "SiOpenai",
+          "description": "Visual content creation platform"
+        },
+        {
+          "name": "Lumalabs",
+          "icon": "SiOpenai",
+          "description": "Visual content processing suite"
         }
       ]
     },
@@ -74,7 +199,7 @@
           "description": "AI assistant for programming practice and conversation"
         },
         {
-          "name": "Claude",
+          "name": "Claude 3.5 Sonnet",
           "icon": "SiOpenai",
           "description": "Advanced AI for text analysis and generation"
         },
@@ -87,6 +212,36 @@
           "name": "Gemini",
           "icon": "SiGoogle",
           "description": "Google's AI assistant for various tasks"
+        },
+        {
+          "name": "Perplexity",
+          "icon": "SiOpenai",
+          "description": "AI-powered research assistant"
+        },
+        {
+          "name": "PouncerAI",
+          "icon": "SiOpenai",
+          "description": "AI automation platform"
+        },
+        {
+          "name": "FeloAI",
+          "icon": "SiOpenai",
+          "description": "AI assistance and automation"
+        },
+        {
+          "name": "Deepseek",
+          "icon": "SiOpenai",
+          "description": "AI-powered search and analysis tool"
+        }
+      ]
+    },
+    {
+      "category": "Language & Translation",
+      "items": [
+        {
+          "name": "Mate Translate",
+          "icon": "SiGoogletranslate",
+          "description": "Comprehensive translation tool with voice pronunciation and dictionary"
         }
       ]
     },
@@ -107,6 +262,71 @@
           "name": "Make",
           "icon": "SiMake",
           "description": "Powerful workflow automation platform"
+        }
+      ]
+    },
+    {
+      "category": "Marketing & Automation",
+      "items": [
+        {
+          "name": "Haiper",
+          "icon": "SiHackthebox",
+          "description": "Marketing campaign automation tool"
+        },
+        {
+          "name": "Klingai",
+          "icon": "SiOpenai",
+          "description": "Creative task automation platform"
+        },
+        {
+          "name": "Neuralwriter",
+          "icon": "SiOpenai",
+          "description": "AI-powered content generation tool"
+        },
+        {
+          "name": "Namelix",
+          "icon": "SiNamecheap",
+          "description": "Business name generation automation"
+        }
+      ]
+    },
+    {
+      "category": "Utility Tools",
+      "items": [
+        {
+          "name": "Recuva",
+          "icon": "SiRescuetime",
+          "description": "Data recovery software"
+        },
+        {
+          "name": "Torrent",
+          "icon": "SiBittorrent",
+          "description": "Application download manager"
+        },
+        {
+          "name": "Unwatermark",
+          "icon": "SiUikit",
+          "description": "Watermark removal tool"
+        },
+        {
+          "name": "Hostingka",
+          "icon": "SiHostinger",
+          "description": "Hosting services platform"
+        }
+      ]
+    },
+    {
+      "category": "AI Research & Development",
+      "items": [
+        {
+          "name": "AiStudioGoogle",
+          "icon": "SiGoogle",
+          "description": "Google's AI development platform"
+        },
+        {
+          "name": "Maisa",
+          "icon": "SiOpenai",
+          "description": "AI integration platform"
         }
       ]
     }
