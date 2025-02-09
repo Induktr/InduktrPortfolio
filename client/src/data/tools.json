@@ -1,37 +1,112 @@
 {
   "tools": [
     {
-      "category": "Frontend",
+      "category": "Development & Programming",
       "items": [
         {
-          "name": "React",
-          "icon": "SiReact",
-          "description": "Primary framework for building user interfaces"
+          "name": "VS Code",
+          "icon": "SiVisualstudiocode",
+          "description": "Primary IDE with extensions like Cline, Roo, Kodu, and Pyhodra"
         },
         {
-          "name": "TypeScript",
-          "icon": "SiTypescript",
-          "description": "Static typing for JavaScript"
+          "name": "Replit",
+          "icon": "SiReplit",
+          "description": "Cloud-based development environment for collaborative coding"
         },
         {
-          "name": "Tailwind CSS",
-          "icon": "SiTailwindcss",
-          "description": "Utility-first CSS framework"
+          "name": "Project IDX",
+          "icon": "SiGoogle",
+          "description": "Advanced development environment for modern web projects"
+        },
+        {
+          "name": "Cursor",
+          "icon": "SiCursor",
+          "description": "AI-powered code editor for enhanced productivity"
         }
       ]
     },
     {
-      "category": "Backend",
+      "category": "Code Analysis & Improvement",
       "items": [
         {
-          "name": "Node.js",
-          "icon": "SiNodedotjs",
-          "description": "Runtime environment for server-side JavaScript"
+          "name": "Blackbox.ai",
+          "icon": "SiOpenai",
+          "description": "Code error detection and correction system"
         },
         {
-          "name": "Express",
-          "icon": "SiExpress",
-          "description": "Web application framework for Node.js"
+          "name": "HuggingChat",
+          "icon": "SiHuggingface",
+          "description": "Code writing and debugging assistant"
+        },
+        {
+          "name": "Wappalyzer",
+          "icon": "SiWappalyzer",
+          "description": "Website technology stack analysis tool"
+        }
+      ]
+    },
+    {
+      "category": "Content Creation",
+      "items": [
+        {
+          "name": "OBS Studio",
+          "icon": "SiObsstudio",
+          "description": "Professional video recording and streaming software"
+        },
+        {
+          "name": "Premiere Pro",
+          "icon": "SiAdobepremierepro",
+          "description": "Professional video editing software"
+        },
+        {
+          "name": "After Effects",
+          "icon": "SiAdobeaftereffects",
+          "description": "Motion graphics and visual effects software"
+        }
+      ]
+    },
+    {
+      "category": "AI & Language",
+      "items": [
+        {
+          "name": "ChatGPT",
+          "icon": "SiOpenai",
+          "description": "AI assistant for programming practice and conversation"
+        },
+        {
+          "name": "Claude",
+          "icon": "SiOpenai",
+          "description": "Advanced AI for text analysis and generation"
+        },
+        {
+          "name": "Mistral",
+          "icon": "SiOpenai",
+          "description": "Alternative AI language model"
+        },
+        {
+          "name": "Gemini",
+          "icon": "SiGoogle",
+          "description": "Google's AI assistant for various tasks"
+        }
+      ]
+    },
+    {
+      "category": "Productivity",
+      "items": [
+        {
+          "name": "Todoist",
+          "icon": "SiTodoist",
+          "description": "Task planning and management platform"
+        },
+        {
+          "name": "Notion",
+          "icon": "SiNotion",
+          "description": "All-in-one workspace for notes and collaboration"
+        },
+        {
+          "name": "Make",
+          "icon": "SiMake",
+          "description": "Powerful workflow automation platform"
         }
       ]
     }
