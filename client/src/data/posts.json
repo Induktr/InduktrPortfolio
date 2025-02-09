@@ -1,0 +1,18 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "Building a Modern Portfolio",
+      "date": "2024-03-20",
+      "excerpt": "How I built this portfolio using React and modern web technologies",
+      "content": "# Building a Modern Portfolio\n\nIn this post, I'll share my experience building a modern portfolio website using React, Tailwind CSS, and other cutting-edge technologies.\n\n## The Tech Stack\n\n- React for the UI\n- Tailwind CSS for styling\n- Framer Motion for animations\n\n## Key Features\n\n1. Dark/Light theme\n2. Responsive design\n3. Markdown support"
+    },
+    {
+      "id": 2,
+      "title": "Web Development Best Practices",
+      "date": "2024-03-15",
+      "excerpt": "Essential practices for modern web development",
+      "content": "# Web Development Best Practices\n\nLet's explore some essential practices for modern web development that I've learned over the years.\n\n## 1. Performance First\n\nAlways optimize for performance from the start.\n\n## 2. Responsive Design\n\nMake your sites work on all devices.\n\n## 3. Accessibility\n\nEnsure your sites are accessible to everyone."
+    }
+  ]
+}

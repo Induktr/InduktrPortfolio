@@ -1,0 +1,28 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "title": "E-commerce Platform",
+      "description": "Full-stack e-commerce solution with React and Node.js",
+      "image": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
+      "tags": ["React", "Node.js", "MongoDB"],
+      "status": "completed",
+      "links": {
+        "github": "https://github.com/induktr/ecommerce",
+        "live": "https://ecommerce-demo.induktr.com"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Portfolio v2",
+      "description": "Personal portfolio website built with React and Tailwind",
+      "image": "https://images.unsplash.com/photo-1555066931-bf19f8fd1085",
+      "tags": ["React", "Tailwind", "Framer Motion"],
+      "status": "completed",
+      "links": {
+        "github": "https://github.com/induktr/portfolio",
+        "live": "https://induktr.com"
+      }
+    }
+  ]
+}

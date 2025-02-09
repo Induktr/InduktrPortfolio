@@ -1,0 +1,39 @@
+{
+  "tools": [
+    {
+      "category": "Frontend",
+      "items": [
+        {
+          "name": "React",
+          "icon": "SiReact",
+          "description": "Primary framework for building user interfaces"
+        },
+        {
+          "name": "TypeScript",
+          "icon": "SiTypescript",
+          "description": "Static typing for JavaScript"
+        },
+        {
+          "name": "Tailwind CSS",
+          "icon": "SiTailwindcss",
+          "description": "Utility-first CSS framework"
+        }
+      ]
+    },
+    {
+      "category": "Backend",
+      "items": [
+        {
+          "name": "Node.js",
+          "icon": "SiNodedotjs",
+          "description": "Runtime environment for server-side JavaScript"
+        },
+        {
+          "name": "Express",
+          "icon": "SiExpress",
+          "description": "Web application framework for Node.js"
+        }
+      ]
+    }
+  ]
+}
