@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
+import { TechSphere } from "@/components/TechSphere";
 
 export default function Home() {
   return (
@@ -34,6 +35,15 @@ export default function Home() {
                   </a>
                 </Button>
               </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-16"
+            >
+              <TechSphere />
             </motion.div>
           </div>
         </section>
