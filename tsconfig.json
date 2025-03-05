@@ -14,10 +14,12 @@
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
     "baseUrl": ".",
-    "types": ["node", "vite/client"],
+    "types": ["node", "express"],
     "paths": {
       "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
-    }
+      "@shared/*": ["./shared/*"],
+      "vite/client": ["./node_modules/vite/client.d.ts"]
+    },
+    "typeRoots": ["./node_modules/@types", "./server/types"]
   }
 }
