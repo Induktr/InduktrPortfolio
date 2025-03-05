@@ -16,31 +16,11 @@ function Router() {
   return (
     <AnimatePresence mode="wait">
       <Switch key={location}>
-        <Route path="/">
-          <PageTransition>
-            <Home />
-          </PageTransition>
-        </Route>
-        <Route path="/projects">
-          <PageTransition>
-            <Projects />
-          </PageTransition>
-        </Route>
-        <Route path="/tools">
-          <PageTransition>
-            <Tools />
-          </PageTransition>
-        </Route>
-        <Route path="/blog">
-          <PageTransition>
-            <Blog />
-          </PageTransition>
-        </Route>
-        <Route>
-          <PageTransition>
-            <NotFound />
-          </PageTransition>
-        </Route>
+        <Route path="/" component={Home} />
+        <Route path="/projects" component={Projects} />
+        <Route path="/tools" component={Tools} />
+        <Route path="/blog" component={Blog} />
+        <Route component={NotFound} />
       </Switch>
     </AnimatePresence>
   );
@@ -51,7 +31,9 @@ function App() {
     <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <div className="min-h-screen bg-background text-foreground">
         <Header />
-        <Router />
+        <PageTransition>
+          <Router />
+        </PageTransition>
       </div>
       <Toaster />
     </ThemeProvider>
