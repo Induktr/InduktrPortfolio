@@ -4,8 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { PageTransition } from "@/components/PageTransition";
 import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@/lib/theme-provider";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Home from "@/pages/Home";
 import Projects from "@/pages/Projects";
 import Tools from "@/pages/Tools";
@@ -27,6 +26,8 @@ function Router() {
     </AnimatePresence>
   );
 }
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
