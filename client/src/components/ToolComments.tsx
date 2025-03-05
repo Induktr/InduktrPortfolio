@@ -51,8 +51,11 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     queryKey: ["/api/comments", toolName],
     queryFn: async () => {
       const response = await fetch(`/api/comments?tool=${encodeURIComponent(toolName)}`);
-      if (!response.ok) throw new Error("Failed to fetch comments");
-      return response.json();
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to fetch comments");
+      }
+      return response.json() as Promise<CommentWithUser[]>;
     },
   });
 
@@ -60,12 +63,17 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     mutationFn: async (data: InsertComment) => {
       const response = await fetch("/api/comments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        credentials: "include", 
         body: JSON.stringify(data),
       });
+
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Failed to post comment");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to post comment");
       }
       return response.json();
     },
@@ -78,7 +86,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
         description: "Your comment has been posted",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to post comment",
