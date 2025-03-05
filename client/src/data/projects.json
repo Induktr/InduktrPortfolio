@@ -2,6 +2,55 @@
   "projects": [
     {
       "id": 1,
+      "title": "BrainMessenger",
+      "description": "Инновационная платформа для обмена сообщениями, объединяющая передовые технологии и интуитивный пользовательский опыт. Проект сочетает в себе элегантный дизайн с плавными анимациями, высокую производительность и надежную систему безопасности для комфортного общения.",
+      "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1741167621/brainmessenger-preview.png",
+      "shortDescription": "Современный мессенджер с уникальным UX/UI дизайном и передовыми технологиями",
+      "status": "in-development",
+      "timeline": {
+        "start": "2025-02-10",
+        "phases": [
+          {
+            "name": "Планирование",
+            "duration": "Feb 10 - Feb 12, 2025",
+            "status": "completed"
+          },
+          {
+            "name": "Дизайн",
+            "duration": "Feb 12 - Feb 13, 2025",
+            "status": "active"
+          },
+          {
+            "name": "Разработка",
+            "duration": "Feb 14 - Feb 20, 2025",
+            "status": "upcoming"
+          }
+        ]
+      },
+      "features": [
+        "Уникальная система UI компонентов",
+        "Анимации и микроинтеракции",
+        "Поддержка мультиязычности",
+        "Оптимизированная производительность",
+        "Адаптивный дизайн",
+        "Системы безопасности"
+      ],
+      "techStack": [
+        "TypeScript & React Native",
+        "Next.js & Tailwind CSS",
+        "Node.js & NestJS",
+        "PostgreSQL & Redis",
+        "GraphQL & Firebase",
+        "Kafka & Stripe"
+      ],
+      "tags": ["Messenger", "Cross-platform", "Modern UI"],
+      "links": {
+        "github": "https://github.com/brainmessenger/platform",
+        "live": "https://brainmessenger.com"
+      }
+    },
+    {
+      "id": 2,
       "title": "FinanceFlow",
       "description": "Инновационное финансовое веб-приложение, сочетающее передовые технологии искусственного интеллекта с современными инструментами управления финансами. Платформа предоставляет интуитивный интерфейс для эффективного финансового планирования, анализа и управления транзакциями.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/financeflow-preview_yryudd.png",
@@ -50,7 +99,7 @@
       }
     },
     {
-      "id": 2,
+      "id": 3,
       "title": "BuildKo",
       "description": "Современное веб-приложение для строительной компании с интерактивным портфолио проектов, системой расчета смет и богатым пользовательским опытом.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
@@ -99,7 +148,7 @@
       }
     },
     {
-      "id": 3,
+      "id": 4,
       "title": "BueatyLove",
       "description": "Элегантное веб-приложение для индустрии красоты, сочетающее в себе современный дизайн, плавные анимации и роскошные визуальные эффекты. Платформа предоставляет комплексное решение для салонов красоты и их клиентов.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891523_cvgovb.png",
