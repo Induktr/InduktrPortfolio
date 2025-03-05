@@ -68,7 +68,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
           "Accept": "application/json",
         },
         credentials: "include", 
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          rating: Number(rating)
+        }),
       });
 
       if (!response.ok) {
@@ -153,7 +156,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
             disabled={isPending}
             className="w-full"
           >
-            Post Comment
+            {isPending ? "Posting..." : "Post Comment"}
           </Button>
         </form>
       </Form>
