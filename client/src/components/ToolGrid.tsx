@@ -81,16 +81,14 @@ export function ToolGrid() {
         ))}
       </div>
 
-      {selectedTool && (
-        <Dialog open={!!selectedTool} onOpenChange={() => setSelectedTool(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{selectedTool}</DialogTitle>
-            </DialogHeader>
-            <ToolComments toolName={selectedTool} />
-          </DialogContent>
-        </Dialog>
-      )}
+      <Dialog open={!!selectedTool} onOpenChange={() => setSelectedTool(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedTool}</DialogTitle>
+          </DialogHeader>
+          {selectedTool && <ToolComments toolName={selectedTool} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
