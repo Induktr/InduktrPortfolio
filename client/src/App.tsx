@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/toaster";
 import { PageTransition } from "@/components/PageTransition";
 import { AnimatePresence } from "framer-motion";
+import { ThemeProvider } from "@/lib/theme-provider";
 import Home from "@/pages/Home";
 import Projects from "@/pages/Projects";
 import Tools from "@/pages/Tools";
@@ -47,11 +48,13 @@ function Router() {
 
 function App() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
-      <Router />
-      <Toaster />
-    </div>
+    <ThemeProvider defaultTheme="light" storageKey="app-theme">
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <Router />
+        <Toaster />
+      </div>
+    </ThemeProvider>
   );
 }
 
