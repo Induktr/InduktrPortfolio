@@ -4,9 +4,12 @@ import * as SiIcons from "react-icons/si";
 import { tools } from "../data/tools.json";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ToolComments } from "./ToolComments";
 
 export function ToolGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
   const filteredTools = selectedCategory
     ? tools.filter(category => category.category === selectedCategory)
@@ -56,7 +59,10 @@ export function ToolGrid() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card className="h-full hover:shadow-lg transition-shadow">
+                    <Card 
+                      className="h-full hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => setSelectedTool(tool.name)}
+                    >
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           {IconComponent && <IconComponent className="h-6 w-6" />}
@@ -74,6 +80,15 @@ export function ToolGrid() {
           </motion.section>
         ))}
       </div>
+
+      <Dialog open={!!selectedTool} onOpenChange={() => setSelectedTool(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedTool}</DialogTitle>
+          </DialogHeader>
+          {selectedTool && <ToolComments toolName={selectedTool} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
