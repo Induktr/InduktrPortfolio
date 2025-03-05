@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
-import { SiGithub } from "react-icons/si";
+import { SiGithub, SiTelegram } from "react-icons/si";
 import { motion } from "framer-motion";
 
 const navItemVariants = {
@@ -66,6 +66,17 @@ export function Header() {
           </Link>
 
           <div className="flex items-center space-x-4">
+            <motion.a
+              href="https://t.me/induktr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-accent"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <SiTelegram className="h-5 w-5" />
+              <span className="sr-only">Telegram</span>
+            </motion.a>
             <motion.a
               href="https://github.com/induktr"
               target="_blank"
