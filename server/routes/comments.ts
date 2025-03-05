@@ -36,9 +36,11 @@ router.get("/api/comments", async (req, res) => {
 router.post("/api/comments", async (req, res) => {
   try {
     const { toolName, comment, rating } = req.body;
+    console.log("Received comment data:", { toolName, comment, rating });
 
     // For development: Get the first user from the database
     const user = await db.select().from(users).limit(1);
+    console.log("Found user:", user[0]);
     const userId = user[0]?.id;
 
     if (!userId) {
@@ -52,6 +54,7 @@ router.post("/api/comments", async (req, res) => {
       rating,
     }).returning();
 
+    console.log("Created comment:", newComment[0]);
     res.json(newComment[0]);
   } catch (error) {
     console.error("Error posting comment:", error);
