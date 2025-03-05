@@ -2,6 +2,55 @@
   "projects": [
     {
       "id": 1,
+      "title": "FinanceFlow",
+      "description": "Инновационное финансовое веб-приложение, сочетающее передовые технологии искусственного интеллекта с современными инструментами управления финансами. Платформа предоставляет интуитивный интерфейс для эффективного финансового планирования, анализа и управления транзакциями.",
+      "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/financeflow-preview_yryudd.png",
+      "shortDescription": "AI-powered финансовая платформа с интеллектуальным анализом и управлением транзакциями",
+      "status": "in-development",
+      "timeline": {
+        "start": "2025-03-01",
+        "phases": [
+          {
+            "name": "Discovery & Planning",
+            "duration": "Mar 1 - Mar 31, 2025",
+            "status": "active"
+          },
+          {
+            "name": "Design Phase",
+            "duration": "Apr 1 - May 15, 2025",
+            "status": "upcoming"
+          },
+          {
+            "name": "Development Phase",
+            "duration": "May 16 - Jul 31, 2025",
+            "status": "upcoming"
+          }
+        ]
+      },
+      "features": [
+        "AI-powered транзакционная категоризация",
+        "Мультивалютная поддержка",
+        "Интеграция с криптовалютами",
+        "Система бюджетирования",
+        "Интеллектуальная аналитика",
+        "Безопасность банковского уровня"
+      ],
+      "techStack": [
+        "React & TypeScript",
+        "Node.js & PostgreSQL",
+        "Claude 3.5 Sonnet AI",
+        "Supabase",
+        "Stripe Integration",
+        "Cryptomus API"
+      ],
+      "tags": ["FinTech", "AI Platform", "Financial Management"],
+      "links": {
+        "github": "https://github.com/financeflow/platform",
+        "live": "https://financeflow.com"
+      }
+    },
+    {
+      "id": 2,
       "title": "BuildKo",
       "description": "Современное веб-приложение для строительной компании с интерактивным портфолио проектов, системой расчета смет и богатым пользовательским опытом.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
@@ -50,7 +99,7 @@
       }
     },
     {
-      "id": 2,
+      "id": 3,
       "title": "BueatyLove",
       "description": "Элегантное веб-приложение для индустрии красоты, сочетающее в себе современный дизайн, плавные анимации и роскошные визуальные эффекты. Платформа предоставляет комплексное решение для салонов красоты и их клиентов.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891523_cvgovb.png",
