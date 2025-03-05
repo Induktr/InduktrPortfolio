@@ -1,4 +1,30 @@
 {
+  "categories": [
+    {
+      "id": "web",
+      "name": "Web Applications",
+      "icon": "browser",
+      "description": "Современные веб-приложения с адаптивным дизайном"
+    },
+    {
+      "id": "mobile",
+      "name": "Кросс-платформенные приложения",
+      "icon": "mobile",
+      "description": "Приложения для Android и других платформ"
+    },
+    {
+      "id": "fintech",
+      "name": "FinTech решения",
+      "icon": "finance",
+      "description": "Финансовые технологии и платежные системы"
+    },
+    {
+      "id": "communication",
+      "name": "Коммуникационные инструменты",
+      "icon": "message",
+      "description": "Мессенджеры и платформы для общения"
+    }
+  ],
   "projects": [
     {
       "id": 1,
@@ -6,6 +32,7 @@
       "description": "Инновационная платформа для обмена сообщениями, объединяющая передовые технологии и интуитивный пользовательский опыт. Проект сочетает в себе элегантный дизайн с плавными анимациями, высокую производительность и надежную систему безопасности для комфортного общения.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891520_r1cl35.png",
       "shortDescription": "Современный мессенджер с уникальным UX/UI дизайном и передовыми технологиями",
+      "categories": ["communication", "mobile", "web"],
       "status": "in-development",
       "timeline": {
         "start": "2025-02-10",
@@ -55,6 +82,7 @@
       "description": "Инновационное финансовое веб-приложение, сочетающее передовые технологии искусственного интеллекта с современными инструментами управления финансами. Платформа предоставляет интуитивный интерфейс для эффективного финансового планирования, анализа и управления транзакциями.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/financeflow-preview_yryudd.png",
       "shortDescription": "AI-powered финансовая платформа с интеллектуальным анализом и управлением транзакциями",
+      "categories": ["fintech", "web"],
       "status": "in-development",
       "timeline": {
         "start": "2025-03-01",
@@ -105,6 +133,7 @@
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
       "video": "https://res.cloudinary.com/dsjalneil/video/upload/v1741164558/VID_20250305_104722_217_katywi.mp4",
       "shortDescription": "Полнофункциональная веб-платформа для строительной компании с инновационными технологиями",
+      "categories": ["web"],
       "status": "in-development",
       "timeline": {
         "start": "2025-02-15",
@@ -153,6 +182,7 @@
       "description": "Элегантное веб-приложение для индустрии красоты, сочетающее в себе современный дизайн, плавные анимации и роскошные визуальные эффекты. Платформа предоставляет комплексное решение для салонов красоты и их клиентов.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891523_cvgovb.png",
       "shortDescription": "Инновационная платформа для индустрии красоты с элегантным дизайном и плавными анимациями",
+      "categories": ["web"],
       "status": "in-development",
       "timeline": {
         "start": "2025-03-01",
