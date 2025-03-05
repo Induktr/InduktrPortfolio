@@ -1,8 +1,11 @@
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { ProjectGallery } from "./ProjectGallery";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface ProjectDialogProps {
   project: {
@@ -30,6 +33,9 @@ export function ProjectDialog({ project, isOpen, onClose }: ProjectDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl h-[80vh] p-0 overflow-hidden">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{project.title}</DialogTitle>
+        </DialogHeader>
         <ProjectGallery project={project} />
       </DialogContent>
     </Dialog>
