@@ -12,6 +12,7 @@ interface ProjectCardProps {
     description: string;
     shortDescription: string;
     image: string;
+    video?: string;
     tags: string[];
     status: string;
     timeline: {
