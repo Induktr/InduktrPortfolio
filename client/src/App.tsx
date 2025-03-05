@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { PageTransition } from "@/components/PageTransition";
 import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Home from "@/pages/Home";
 import Projects from "@/pages/Projects";
 import Tools from "@/pages/Tools";
@@ -26,17 +27,21 @@ function Router() {
   );
 }
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="app-theme">
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <PageTransition>
-          <Router />
-        </PageTransition>
-      </div>
-      <Toaster />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="app-theme">
+        <div className="min-h-screen bg-background text-foreground">
+          <Header />
+          <PageTransition>
+            <Router />
+          </PageTransition>
+        </div>
+        <Toaster />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

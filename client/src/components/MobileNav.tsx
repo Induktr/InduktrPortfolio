@@ -36,30 +36,27 @@ export function MobileNav() {
             }}
             className="flex flex-col space-y-1"
           >
-            <Link href="/projects">
-              <motion.a
-                variants={navItemVariants}
-                className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors"
-              >
-                Projects
-              </motion.a>
-            </Link>
-            <Link href="/tools">
-              <motion.a
-                variants={navItemVariants}
-                className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors"
-              >
-                Tools
-              </motion.a>
-            </Link>
-            <Link href="/blog">
-              <motion.a
-                variants={navItemVariants}
-                className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors"
-              >
-                Blog
-              </motion.a>
-            </Link>
+            <motion.div variants={navItemVariants}>
+              <Link href="/projects">
+                <div className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors">
+                  Projects
+                </div>
+              </Link>
+            </motion.div>
+            <motion.div variants={navItemVariants}>
+              <Link href="/tools">
+                <div className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors">
+                  Tools
+                </div>
+              </Link>
+            </motion.div>
+            <motion.div variants={navItemVariants}>
+              <Link href="/blog">
+                <div className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors">
+                  Blog
+                </div>
+              </Link>
+            </motion.div>
           </motion.div>
 
           <motion.div
