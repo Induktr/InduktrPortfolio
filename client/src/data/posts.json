@@ -5,7 +5,7 @@
       "title": "Building a Modern Portfolio",
       "date": "2024-03-20",
       "excerpt": "How I built this portfolio using React and modern web technologies",
-      "content": "<h1>Building a Modern Portfolio</h1><p>В этом видео я расскажу о процессе создания современного портфолио с использованием React и передовых веб-технологий.</p><h2>Видео презентация</h2><div style='position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 2rem 0;'><iframe style='position: absolute; top: 0; left: 0; width: 100%; height: 100%;' src='https://www.youtube.com/embed/e1vMRIvZR3s' title='Building a Modern Portfolio' frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></div><h2>The Tech Stack</h2><ul><li>React для пользовательского интерфейса</li><li>Tailwind CSS для стилизации</li><li>Framer Motion для анимаций</li></ul><h2>Ключевые особенности</h2><ol><li>Тёмная/Светлая тема</li><li>Адаптивный дизайн</li><li>Поддержка Markdown</li><li>Интерактивные анимации</li><li>Оптимизированная производительность</li></ol>"
+      "content": "# Building a Modern Portfolio\n\nIn this post, I'll share my experience building a modern portfolio website using React, Tailwind CSS, and other cutting-edge technologies.\n\n## The Tech Stack\n\n- React for the UI\n- Tailwind CSS for styling\n- Framer Motion for animations\n\n## Key Features\n\n1. Dark/Light theme\n2. Responsive design\n3. Markdown support"
     },
     {
       "id": 2,
