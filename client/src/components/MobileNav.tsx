@@ -21,8 +21,8 @@ export function MobileNav() {
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[80vw] sm:w-[380px]">
-        <nav className="flex flex-col space-y-6 mt-6">
+      <SheetContent side="left" className="w-[80vw] sm:w-[380px] bg-background border-r">
+        <nav className="flex flex-col h-full justify-between py-6">
           <motion.div
             initial="initial"
             animate="animate"
@@ -34,43 +34,43 @@ export function MobileNav() {
                 }
               }
             }}
-            className="flex flex-col space-y-4"
+            className="flex flex-col space-y-1"
           >
             <Link href="/projects">
-              <motion.span
+              <motion.a
                 variants={navItemVariants}
-                className="block px-2 py-1 text-lg hover:text-primary cursor-pointer"
+                className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors"
               >
                 Projects
-              </motion.span>
+              </motion.a>
             </Link>
             <Link href="/tools">
-              <motion.span
+              <motion.a
                 variants={navItemVariants}
-                className="block px-2 py-1 text-lg hover:text-primary cursor-pointer"
+                className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors"
               >
                 Tools
-              </motion.span>
+              </motion.a>
             </Link>
             <Link href="/blog">
-              <motion.span
+              <motion.a
                 variants={navItemVariants}
-                className="block px-2 py-1 text-lg hover:text-primary cursor-pointer"
+                className="block px-4 py-3 text-lg hover:text-primary hover:bg-muted rounded-md cursor-pointer transition-colors"
               >
                 Blog
-              </motion.span>
+              </motion.a>
             </Link>
           </motion.div>
 
           <motion.div
             variants={navItemVariants}
-            className="flex items-center space-x-4 px-2"
+            className="flex items-center gap-4 px-4 pt-4 border-t"
           >
             <motion.a
               href="https://t.me/induktr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-accent"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-md hover:bg-muted"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
@@ -81,7 +81,7 @@ export function MobileNav() {
               href="https://github.com/induktr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center h-9 w-9 rounded-md hover:bg-accent"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-md hover:bg-muted"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
