@@ -22,6 +22,7 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[80vw] sm:w-[380px] bg-background border-r">
+        <h2 className="sr-only">Mobile navigation menu</h2>
         <nav className="flex flex-col h-full justify-between py-6">
           <motion.div
             initial="initial"
