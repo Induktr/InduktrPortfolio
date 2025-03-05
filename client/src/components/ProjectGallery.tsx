@@ -8,7 +8,7 @@ interface ProjectGalleryProps {
     title: string;
     description: string;
     image: string;
-    video?: string; // Added video property
+    video?: string;
     features: string[];
     techStack: string[];
   };
@@ -79,9 +79,9 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
 
       {/* Media Container */}
       <div className="flex-1 overflow-hidden">
-        {showVideo && project.video ? ( //Check for video property existence
+        {showVideo && project.video ? (
           <video
-            src={project.video} // Use the video URL from project prop
+            src={project.video}
             controls
             className="w-full h-full object-contain"
           />
@@ -113,7 +113,7 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm p-6 rounded-t-xl"
+            className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm p-6 rounded-t-xl max-h-[70vh] overflow-y-auto"
           >
             <h2 className="text-2xl font-bold mb-4">{project.title}</h2>
             <p className="text-muted-foreground mb-4">{project.description}</p>
