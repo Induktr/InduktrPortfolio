@@ -34,11 +34,11 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
 
-  // Инициализация формы с расширенной валидацией
+  // Инициализация формы с валидацией через Zod
   const form = useForm<InsertComment>({
     resolver: zodResolver(
       insertCommentSchema.extend({
-        rating: insertCommentSchema.shape.rating.min(1, "Please select a rating")
+        rating: insertCommentSchema.shape.rating.min(1, "Пожалуйста, выберите рейтинг")
       })
     ),
     defaultValues: {
@@ -48,79 +48,97 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     },
   });
 
-  // Получение комментариев
+  // Запрос комментариев с сервера
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ["/api/comments", toolName],
     queryFn: async () => {
-      const response = await fetch(`/api/comments?tool=${encodeURIComponent(toolName)}`);
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Failed to fetch comments");
+      try {
+        const response = await fetch(`/api/comments?tool=${encodeURIComponent(toolName)}`);
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(error || "Не удалось загрузить комментарии");
+        }
+        return response.json() as Promise<CommentWithUser[]>;
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        throw error;
       }
-      return response.json() as Promise<CommentWithUser[]>;
     },
   });
 
-  // Мутация для отправки комментария
+  // Мутация для создания нового комментария
   const { mutate: submitComment, isPending } = useMutation({
-    mutationFn: async (data: InsertComment) => {
-      console.log("Submitting comment:", { ...data, rating });
-      const response = await fetch("/api/comments", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        credentials: "include", 
-        body: JSON.stringify({
-          ...data,
-          rating: Number(rating)
-        }),
-      });
+    mutationFn: async (commentData: InsertComment) => {
+      try {
+        console.log("Отправка комментария:", commentData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to post comment");
+        const response = await fetch("/api/comments", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(commentData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Не удалось отправить комментарий");
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error("Ошибка отправки комментария:", error);
+        throw error;
       }
-      return response.json();
     },
     onSuccess: () => {
+      // Очистка формы и обновление списка комментариев
       queryClient.invalidateQueries({ queryKey: ["/api/comments", toolName] });
       form.reset();
       setRating(0);
       toast({
-        title: "Success",
-        description: "Your comment has been posted",
+        title: "Успех",
+        description: "Ваш комментарий опубликован",
       });
     },
     onError: (error: Error) => {
-      console.error("Comment submission error:", error);
+      console.error("Ошибка публикации:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to post comment",
+        title: "Ошибка",
+        description: error.message || "Не удалось опубликовать комментарий",
         variant: "destructive",
       });
     },
   });
 
   // Обработчик отправки формы
-  const onSubmit = (data: InsertComment) => {
+  const onSubmit = form.handleSubmit((data) => {
     if (rating === 0) {
       toast({
-        title: "Error",
-        description: "Please select a rating",
+        title: "Ошибка",
+        description: "Пожалуйста, выберите рейтинг",
         variant: "destructive",
       });
       return;
     }
-    console.log("Form submission:", { ...data, rating });
-    submitComment({ ...data, rating });
-  };
+
+    // Подготовка данных для отправки
+    const commentData: InsertComment = {
+      ...data,
+      toolName,
+      rating: Number(rating),
+    };
+
+    console.log("Подготовленные данные:", commentData);
+    submitComment(commentData);
+  });
 
   return (
     <div className="space-y-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((value) => (
               <Button
@@ -131,7 +149,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
                 className="p-0 h-8 w-8"
                 onClick={() => {
                   setRating(value);
-                  form.setValue('rating', value);
+                  form.setValue("rating", value, { 
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  });
                 }}
               >
                 <Star
@@ -148,10 +169,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
             name="comment"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Your comment</FormLabel>
+                <FormLabel>Ваш комментарий</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Share your thoughts about this tool..."
+                    placeholder="Поделитесь своими мыслями об этом инструменте..."
                     className="min-h-[100px]"
                     {...field}
                   />
@@ -166,17 +187,17 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
             disabled={isPending}
             className="w-full"
           >
-            {isPending ? "Posting..." : "Post Comment"}
+            {isPending ? "Публикация..." : "Опубликовать комментарий"}
           </Button>
         </form>
       </Form>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Comments</h3>
+        <h3 className="text-lg font-semibold">Комментарии</h3>
         {isLoading ? (
-          <p className="text-muted-foreground">Loading comments...</p>
+          <p className="text-muted-foreground">Загрузка комментариев...</p>
         ) : comments.length === 0 ? (
-          <p className="text-muted-foreground">No comments yet. Be the first to share your thoughts!</p>
+          <p className="text-muted-foreground">Пока нет комментариев. Будьте первым!</p>
         ) : (
           <AnimatePresence>
             {comments.map((comment) => (
