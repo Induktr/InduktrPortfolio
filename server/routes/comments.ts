@@ -62,4 +62,81 @@ router.post("/api/comments", async (req, res) => {
   }
 });
 
+// Update a comment
+router.patch("/api/comments/:id", async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    const { comment, rating } = req.body;
+
+    // For development: Get the first user
+    const user = await db.select().from(users).limit(1);
+    const userId = user[0]?.id;
+
+    // Check if the comment exists and belongs to the user
+    const existingComment = await db
+      .select()
+      .from(toolComments)
+      .where(eq(toolComments.id, commentId))
+      .limit(1);
+
+    if (!existingComment.length) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    if (existingComment[0].userId !== userId) {
+      return res.status(403).json({ error: "Not authorized to update this comment" });
+    }
+
+    const updatedComment = await db
+      .update(toolComments)
+      .set({
+        comment,
+        rating,
+        updatedAt: new Date(),
+      })
+      .where(eq(toolComments.id, commentId))
+      .returning();
+
+    res.json(updatedComment[0]);
+  } catch (error) {
+    console.error("Error updating comment:", error);
+    res.status(500).json({ error: "Failed to update comment" });
+  }
+});
+
+// Delete a comment
+router.delete("/api/comments/:id", async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.id);
+
+    // For development: Get the first user
+    const user = await db.select().from(users).limit(1);
+    const userId = user[0]?.id;
+
+    // Check if the comment exists and belongs to the user
+    const existingComment = await db
+      .select()
+      .from(toolComments)
+      .where(eq(toolComments.id, commentId))
+      .limit(1);
+
+    if (!existingComment.length) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    if (existingComment[0].userId !== userId) {
+      return res.status(403).json({ error: "Not authorized to delete this comment" });
+    }
+
+    await db
+      .delete(toolComments)
+      .where(eq(toolComments.id, commentId));
+
+    res.status(204).end();
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    res.status(500).json({ error: "Failed to delete comment" });
+  }
+});
+
 export default router;
