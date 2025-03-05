@@ -34,6 +34,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
 
+  // Инициализация формы с расширенной валидацией
   const form = useForm<InsertComment>({
     resolver: zodResolver(
       insertCommentSchema.extend({
@@ -47,6 +48,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     },
   });
 
+  // Получение комментариев
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ["/api/comments", toolName],
     queryFn: async () => {
@@ -59,8 +61,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     },
   });
 
+  // Мутация для отправки комментария
   const { mutate: submitComment, isPending } = useMutation({
     mutationFn: async (data: InsertComment) => {
+      console.log("Submitting comment:", { ...data, rating });
       const response = await fetch("/api/comments", {
         method: "POST",
         headers: { 
@@ -90,6 +94,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
       });
     },
     onError: (error: Error) => {
+      console.error("Comment submission error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to post comment",
@@ -98,6 +103,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     },
   });
 
+  // Обработчик отправки формы
   const onSubmit = (data: InsertComment) => {
     if (rating === 0) {
       toast({
@@ -107,6 +113,7 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
       });
       return;
     }
+    console.log("Form submission:", { ...data, rating });
     submitComment({ ...data, rating });
   };
 
@@ -122,7 +129,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
                 variant="ghost"
                 size="sm"
                 className="p-0 h-8 w-8"
-                onClick={() => setRating(value)}
+                onClick={() => {
+                  setRating(value);
+                  form.setValue('rating', value);
+                }}
               >
                 <Star
                   className={`h-6 w-6 ${
