@@ -35,7 +35,11 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
   const [rating, setRating] = useState(0);
 
   const form = useForm<InsertComment>({
-    resolver: zodResolver(insertCommentSchema),
+    resolver: zodResolver(
+      insertCommentSchema.extend({
+        rating: insertCommentSchema.shape.rating.min(1, "Please select a rating")
+      })
+    ),
     defaultValues: {
       toolName,
       comment: "",
@@ -43,10 +47,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     },
   });
 
-  const { data: comments = [], isLoading } = useQuery<CommentWithUser[]>({
+  const { data: comments = [], isLoading } = useQuery({
     queryKey: ["/api/comments", toolName],
     queryFn: async () => {
-      const response = await fetch(`/api/comments?tool=${toolName}`);
+      const response = await fetch(`/api/comments?tool=${encodeURIComponent(toolName)}`);
       if (!response.ok) throw new Error("Failed to fetch comments");
       return response.json();
     },
@@ -59,7 +63,10 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to post comment");
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to post comment");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -71,16 +78,24 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
         description: "Your comment has been posted",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to post comment",
+        description: error.message || "Failed to post comment",
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: InsertComment) => {
+    if (rating === 0) {
+      toast({
+        title: "Error",
+        description: "Please select a rating",
+        variant: "destructive",
+      });
+      return;
+    }
     submitComment({ ...data, rating });
   };
 
