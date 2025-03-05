@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ChevronUp, ZoomIn, ZoomOut, Image, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ProjectGalleryProps {
@@ -8,6 +8,7 @@ interface ProjectGalleryProps {
     title: string;
     description: string;
     image: string;
+    video?: string; // Added video property
     features: string[];
     techStack: string[];
   };
@@ -16,6 +17,7 @@ interface ProjectGalleryProps {
 export function ProjectGallery({ project }: ProjectGalleryProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [scale, setScale] = useState(1);
+  const [showVideo, setShowVideo] = useState(false);
 
   const handleZoomIn = () => {
     setScale(prev => Math.min(prev + 0.5, 3));
@@ -41,43 +43,67 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
             <ChevronDown className="h-4 w-4" />
           )}
         </Button>
+        {!showVideo && (
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomIn}
+              className="backdrop-blur-sm bg-background/50"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomOut}
+              className="backdrop-blur-sm bg-background/50"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+          </>
+        )}
         <Button
           variant="outline"
           size="icon"
-          onClick={handleZoomIn}
+          onClick={() => setShowVideo(!showVideo)}
           className="backdrop-blur-sm bg-background/50"
         >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleZoomOut}
-          className="backdrop-blur-sm bg-background/50"
-        >
-          <ZoomOut className="h-4 w-4" />
+          {showVideo ? (
+            <Image className="h-4 w-4" />
+          ) : (
+            <Video className="h-4 w-4" />
+          )}
         </Button>
       </div>
 
-      {/* Image Container */}
+      {/* Media Container */}
       <div className="flex-1 overflow-hidden">
-        <motion.div
-          className="w-full h-full"
-          style={{
-            backgroundImage: `url(${project.image})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-          animate={{ scale }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          drag
-          dragConstraints={{
-            top: -100,
-            left: -100,
-            right: 100,
-            bottom: 100,
-          }}
-        />
+        {showVideo && project.video ? ( //Check for video property existence
+          <video
+            src={project.video} // Use the video URL from project prop
+            controls
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <motion.div
+            className="w-full h-full"
+            style={{
+              backgroundImage: `url(${project.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+            animate={{ scale }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            drag
+            dragConstraints={{
+              top: -100,
+              left: -100,
+              right: 100,
+              bottom: 100,
+            }}
+          />
+        )}
       </div>
 
       {/* Project Details */}
@@ -91,7 +117,7 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
           >
             <h2 className="text-2xl font-bold mb-4">{project.title}</h2>
             <p className="text-muted-foreground mb-4">{project.description}</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Ключевые функции</h3>
