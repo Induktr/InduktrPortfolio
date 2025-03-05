@@ -2,26 +2,50 @@
   "projects": [
     {
       "id": 1,
-      "title": "E-commerce Platform",
-      "description": "Full-stack e-commerce solution with React and Node.js",
-      "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
-      "tags": ["React", "Node.js", "MongoDB"],
-      "status": "completed",
-      "links": {
-        "github": "https://github.com/induktr/ecommerce",
-        "live": "https://ecommerce-demo.induktr.com"
-      }
-    },
-    {
-      "id": 2,
       "title": "BuildKo",
-      "description": "Personal portfolio website built with React and Tailwind",
+      "description": "Современное веб-приложение для строительной компании с интерактивным портфолио проектов, системой расчета смет и богатым пользовательским опытом.",
       "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
-      "tags": ["React", "Tailwind", "Framer Motion"],
-      "status": "completed",
+      "shortDescription": "Полнофункциональная веб-платформа для строительной компании с инновационными технологиями",
+      "status": "in-development",
+      "timeline": {
+        "start": "2025-02-15",
+        "phases": [
+          {
+            "name": "Discovery & Planning",
+            "duration": "Feb 15 - Mar 14, 2025",
+            "status": "active"
+          },
+          {
+            "name": "Design Phase",
+            "duration": "Mar 15 - Apr 24, 2025",
+            "status": "upcoming"
+          },
+          {
+            "name": "Development Phase",
+            "duration": "Apr 25 - Jun 20, 2025",
+            "status": "upcoming"
+          }
+        ]
+      },
+      "features": [
+        "Интерактивное портфолио проектов",
+        "3D визуализация с Three.js",
+        "Система расчета смет",
+        "Анимации Framer Motion",
+        "Адаптивный дизайн"
+      ],
+      "techStack": [
+        "React",
+        "TypeScript",
+        "Three.js",
+        "Framer Motion",
+        "Tailwind CSS",
+        "Node.js"
+      ],
+      "tags": ["Construction", "Web Platform", "3D Visualization"],
       "links": {
-        "github": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891520_r1cl35.png",
-        "live": "https://induktr.com"
+        "github": "https://github.com/buildko/platform",
+        "live": "https://buildko.com"
       }
     }
   ]
