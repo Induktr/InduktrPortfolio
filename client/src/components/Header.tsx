@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { ThemeToggle } from "./ThemeToggle";
 import { SiGithub, SiTelegram } from "react-icons/si";
 import { motion } from "framer-motion";
+import { MobileNav } from "./MobileNav";
 
 const navItemVariants = {
   hover: { scale: 1.05, color: "hsl(var(--primary))" },
@@ -22,18 +23,21 @@ export function Header() {
       transition={{ duration: 0.3 }}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <motion.span 
-            className="text-2xl font-bold cursor-pointer"
-            variants={logoVariants}
-            whileHover="hover"
-            whileTap="tap"
-          >
-            Induktr
-          </motion.span>
-        </Link>
+        <div className="flex items-center gap-4">
+          <MobileNav />
+          <Link href="/">
+            <motion.span 
+              className="text-2xl font-bold cursor-pointer"
+              variants={logoVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              Induktr
+            </motion.span>
+          </Link>
+        </div>
 
-        <nav className="flex items-center space-x-8">
+        <nav className="hidden md:flex items-center space-x-8">
           <Link href="/projects">
             <motion.span 
               className="cursor-pointer"
