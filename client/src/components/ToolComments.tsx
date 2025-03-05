@@ -14,13 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Star, MoreVertical, Pencil, Trash } from "lucide-react";
+import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ToolCommentsProps {
@@ -39,7 +33,6 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
 
   // Инициализация формы с валидацией через Zod
   const form = useForm<InsertComment>({
@@ -115,68 +108,6 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
       toast({
         title: "Ошибка",
         description: error.message || "Не удалось опубликовать комментарий",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Мутация для удаления комментария
-  const { mutate: deleteComment } = useMutation({
-    mutationFn: async (commentId: number) => {
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Не удалось удалить комментарий");
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/comments", toolName] });
-      toast({
-        title: "Успех",
-        description: "Комментарий удален",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Мутация для обновления комментария
-  const { mutate: updateComment } = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertComment> }) => {
-      const response = await fetch(`/api/comments/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Не удалось обновить комментарий");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/comments", toolName] });
-      setEditingCommentId(null);
-      toast({
-        title: "Успех",
-        description: "Комментарий обновлен",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Ошибка",
-        description: error.message,
         variant: "destructive",
       });
     },
@@ -278,89 +209,17 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
                 className="bg-card rounded-lg p-4"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{comment.username}</span>
-                    <div className="flex">
-                      {Array.from({ length: comment.rating }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                      ))}
-                    </div>
+                  <span className="font-medium">{comment.username}</span>
+                  <div className="flex">
+                    {Array.from({ length: comment.rating }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                        <span className="sr-only">Открыть меню</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => setEditingCommentId(comment.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        <span>Редактировать</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => deleteComment(comment.id)}
-                        className="flex items-center gap-2 text-destructive"
-                      >
-                        <Trash className="h-4 w-4" />
-                        <span>Удалить</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
-                {editingCommentId === comment.id ? (
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit((data) =>
-                        updateComment({
-                          id: comment.id,
-                          data: { comment: data.comment, rating },
-                        })
-                      )}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={form.control}
-                        name="comment"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                defaultValue={comment.comment}
-                                className="min-h-[100px]"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex gap-2">
-                        <Button type="submit" size="sm">
-                          Сохранить
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingCommentId(null)}
-                        >
-                          Отмена
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                ) : (
-                  <>
-                    <p className="text-muted-foreground">{comment.comment}</p>
-                    <span className="text-xs text-muted-foreground mt-2 block">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
-                  </>
-                )}
+                <p className="text-muted-foreground">{comment.comment}</p>
+                <span className="text-xs text-muted-foreground mt-2 block">
+                  {new Date(comment.createdAt).toLocaleDateString()}
+                </span>
               </motion.div>
             ))}
           </AnimatePresence>
