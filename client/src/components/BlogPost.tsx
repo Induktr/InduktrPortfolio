@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import ReactMarkdown from "react-markdown";
+//import ReactMarkdown from "react-markdown"; //Removed as not needed
 
 interface BlogPostProps {
   post: {
@@ -20,9 +20,10 @@ export function BlogPost({ post }: BlogPostProps) {
         </time>
       </CardHeader>
       <CardContent>
-        <div className="prose dark:prose-invert max-w-none">
-          <ReactMarkdown>{post.content}</ReactMarkdown>
-        </div>
+        <div 
+          className="prose dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
       </CardContent>
     </Card>
   );
