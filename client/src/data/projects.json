@@ -47,6 +47,49 @@
         "github": "https://github.com/buildko/platform",
         "live": "https://buildko.com"
       }
+    },
+    {
+      "id": 2,
+      "title": "BueatyLove",
+      "description": "Элегантное веб-приложение для индустрии красоты, сочетающее в себе современный дизайн, плавные анимации и роскошные визуальные эффекты. Платформа предоставляет комплексное решение для салонов красоты и их клиентов.",
+      "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/beauty-template_yryudd.png",
+      "shortDescription": "Инновационная платформа для индустрии красоты с элегантным дизайном и плавными анимациями",
+      "status": "in-development",
+      "timeline": {
+        "start": "2025-03-01",
+        "phases": [
+          {
+            "name": "Motion Design & Animations",
+            "duration": "14 days",
+            "status": "active"
+          },
+          {
+            "name": "Core Development",
+            "duration": "30 days",
+            "status": "upcoming"
+          }
+        ]
+      },
+      "features": [
+        "Анимации с плавными переходами",
+        "Элегантные фоновые паттерны",
+        "Физически-реалистичные эффекты инерции",
+        "Роскошные UI элементы",
+        "Оптимизированная производительность"
+      ],
+      "techStack": [
+        "JavaScript (ES6+)",
+        "HTML5",
+        "CSS3 with PostCSS",
+        "Tailwind CSS",
+        "Vite",
+        "Framer Motion"
+      ],
+      "tags": ["Beauty Industry", "Web Platform", "Luxury Design"],
+      "links": {
+        "github": "https://github.com/beautylove/platform",
+        "live": "https://beautylove.com"
+      }
     }
   ]
 }
