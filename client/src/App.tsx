@@ -48,12 +48,12 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="app-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="app-theme">
       <div className="min-h-screen bg-background text-foreground">
         <Header />
         <Router />
-        <Toaster />
       </div>
+      <Toaster />
     </ThemeProvider>
   );
 }
