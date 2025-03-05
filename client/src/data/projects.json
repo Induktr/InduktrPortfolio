@@ -4,7 +4,7 @@
       "id": 1,
       "title": "E-commerce Platform",
       "description": "Full-stack e-commerce solution with React and Node.js",
-      "image": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
+      "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
       "tags": ["React", "Node.js", "MongoDB"],
       "status": "completed",
       "links": {
@@ -14,13 +14,13 @@
     },
     {
       "id": 2,
-      "title": "Portfolio v2",
+      "title": "BuildKo",
       "description": "Personal portfolio website built with React and Tailwind",
-      "image": "https://images.unsplash.com/photo-1555066931-bf19f8fd1085",
+      "image": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891522-1_yryudd.png",
       "tags": ["React", "Tailwind", "Framer Motion"],
       "status": "completed",
       "links": {
-        "github": "https://github.com/induktr/portfolio",
+        "github": "https://res.cloudinary.com/dsjalneil/image/upload/v1740704902/5891520_r1cl35.png",
         "live": "https://induktr.com"
       }
     }
