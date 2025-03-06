@@ -120,10 +120,70 @@
         "Tailwind CSS",
         "Node.js"
       ],
+      "additionalTech": {
+        "mediaTools": {
+          "title": "Работа с изображениями и медиа",
+          "items": [
+            "react-image-gallery для галерей проектов",
+            "sharp для оптимизации изображений",
+            "react-compare-image для сравнений до/после"
+          ]
+        },
+        "formTools": {
+          "title": "Формы и валидация",
+          "items": [
+            "React Hook Form для управления формами",
+            "Zod для валидации данных",
+            "react-pdf для генерации PDF документов"
+          ]
+        },
+        "cmsTools": {
+          "title": "CMS и контент",
+          "items": [
+            "Strapi как headless CMS",
+            "MDX для насыщенного контента",
+            "react-markdown для рендеринга markdown"
+          ]
+        },
+        "performanceTools": {
+          "title": "Производительность и оптимизация",
+          "items": [
+            "React Suspense и lazy loading для разделения кода",
+            "Lighthouse CI для мониторинга производительности",
+            "react-virtual для виртуализации длинных списков"
+          ]
+        },
+        "testingTools": {
+          "title": "Тестирование",
+          "items": [
+            "Vitest для модульного тестирования",
+            "React Testing Library для тестирования компонентов",
+            "Cypress для E2E тестирования",
+            "MSW для мокирования API"
+          ]
+        },
+        "devopsTools": {
+          "title": "DevOps и деплой",
+          "items": [
+            "Docker для контейнеризации",
+            "GitHub Actions для CI/CD",
+            "Vercel для хостинга"
+          ]
+        },
+        "developmentTools": {
+          "title": "Инструменты разработки",
+          "items": [
+            "Srcbook для управления исходным кодом",
+            "Cursor для AI-ассистированной разработки"
+          ]
+        }
+      },
       "tags": ["Construction", "Web Platform", "3D Visualization"],
       "links": {
         "github": "https://github.com/Induktr/buildko",
-        "live": "https://buildko.netlify.app/"
+        "live": "https://buildko.netlify.app/",
+        "srcbook": "https://srcbook.com/",
+        "cursor": "https://www.cursor.com/"
       }
     },
     {

@@ -21,7 +21,7 @@
         {
           "name": "Cursor",
           "icon": "SiCursor",
-          "description": "AI-powered code editor for enhanced productivity"
+          "description": "AI-powered code editor extensively used in BuildKo project for enhanced productivity and intelligent code assistance"
         },
         {
           "name": "Windsurf",
@@ -86,7 +86,7 @@
         {
           "name": "Srcbook",
           "icon": "SiSourcegraph",
-          "description": "Source code management and organization"
+          "description": "Source code management and organization tool used in BuildKo project for efficient code structure and documentation"
         },
         {
           "name": "Loveable",
