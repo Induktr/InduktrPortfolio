@@ -11,6 +11,36 @@ interface ProjectGalleryProps {
     video?: string;
     features: string[];
     techStack: string[];
+    additionalTech?: {
+      mediaTools?: {
+        title: string;
+        items: string[];
+      };
+      formTools?: {
+        title: string;
+        items: string[];
+      };
+      cmsTools?: {
+        title: string;
+        items: string[];
+      };
+      performanceTools?: {
+        title: string;
+        items: string[];
+      };
+      testingTools?: {
+        title: string;
+        items: string[];
+      };
+      devopsTools?: {
+        title: string;
+        items: string[];
+      };
+      developmentTools?: {
+        title: string;
+        items: string[];
+      };
+    };
   };
 }
 
@@ -34,127 +64,177 @@ export function ProjectGallery({ project }: ProjectGalleryProps) {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-          className="backdrop-blur-sm bg-background/50"
+          className="bg-background/80 backdrop-blur-sm"
+          onClick={() => setShowVideo(!showVideo)}
         >
-          {isDetailsOpen ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
+          {showVideo ? <Image className="h-4 w-4" /> : <Video className="h-4 w-4" />}
         </Button>
-        {!showVideo && (
-          <>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleZoomIn}
-              className="backdrop-blur-sm bg-background/50"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleZoomOut}
-              className="backdrop-blur-sm bg-background/50"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-          </>
-        )}
         <Button
           variant="outline"
           size="icon"
-          onClick={() => setShowVideo(!showVideo)}
-          className="backdrop-blur-sm bg-background/50"
+          className="bg-background/80 backdrop-blur-sm"
+          onClick={handleZoomIn}
         >
-          {showVideo ? (
-            <Image className="h-4 w-4" />
-          ) : (
-            <Video className="h-4 w-4" />
-          )}
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-background/80 backdrop-blur-sm"
+          onClick={handleZoomOut}
+        >
+          <ZoomOut className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Media Container */}
-      <div className="flex-1 overflow-hidden">
-        {showVideo && project.video ? (
-          <video
-            src={project.video}
-            controls
-            className="w-full h-full object-contain"
-          />
-        ) : (
-          <motion.div
-            className="w-full h-full"
-            style={{
-              backgroundImage: `url(${project.image})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-            animate={{ scale }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            drag
-            dragConstraints={{
-              top: -100,
-              left: -100,
-              right: 100,
-              bottom: 100,
-            }}
-          />
-        )}
+      {/* Media Display */}
+      <div className="relative flex-1 overflow-hidden">
+        <AnimatePresence mode="wait">
+          {showVideo && project.video ? (
+            <motion.div
+              key="video"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center bg-black"
+            >
+              <video
+                src={project.video}
+                controls
+                autoPlay
+                className="max-w-full max-h-full"
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="image"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{
+                backgroundImage: `url(${project.image})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                transform: `scale(${scale})`,
+                transition: "transform 0.3s ease-out",
+              }}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Project Details */}
-      <AnimatePresence>
-        {isDetailsOpen && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm p-6 rounded-t-xl max-h-[70vh] overflow-y-auto"
+      <div className="bg-background/95 backdrop-blur-sm p-4 border-t">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">{project.title}</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+            className="ml-2"
           >
-            <h2 className="text-2xl font-bold mb-4">{project.title}</h2>
-            <p className="text-muted-foreground mb-4">{project.description}</p>
+            {isDetailsOpen ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold mb-2">Ключевые функции</h3>
-                <ul className="space-y-1">
-                  {project.features.map((feature, index) => (
-                    <motion.li
-                      key={feature}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-center gap-2"
-                    >
-                      <span className="w-2 h-2 bg-primary rounded-full" />
-                      <span>{feature}</span>
-                    </motion.li>
-                  ))}
-                </ul>
+        <AnimatePresence>
+          {isDetailsOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Описание</h4>
+                  <p className="text-sm text-muted-foreground">{project.description}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Ключевые функции</h4>
+                  <ul className="text-sm text-muted-foreground grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                    {project.features.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Технологии</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {project.techStack.map((tech, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="mr-2">•</span>
+                          <span>{tech}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {project.additionalTech && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Дополнительные технологии</h4>
+                      <div className="space-y-3">
+                        {project.additionalTech.mediaTools && (
+                          <div>
+                            <h5 className="text-xs font-medium text-primary">{project.additionalTech.mediaTools.title}</h5>
+                            <ul className="text-xs text-muted-foreground">
+                              {project.additionalTech.mediaTools.items.map((item, idx) => (
+                                <li key={idx} className="flex items-start">
+                                  <span className="mr-1">•</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {project.additionalTech.formTools && (
+                          <div>
+                            <h5 className="text-xs font-medium text-primary">{project.additionalTech.formTools.title}</h5>
+                            <ul className="text-xs text-muted-foreground">
+                              {project.additionalTech.formTools.items.map((item, idx) => (
+                                <li key={idx} className="flex items-start">
+                                  <span className="mr-1">•</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {project.additionalTech.developmentTools && (
+                          <div>
+                            <h5 className="text-xs font-medium text-primary">{project.additionalTech.developmentTools.title}</h5>
+                            <ul className="text-xs text-muted-foreground">
+                              {project.additionalTech.developmentTools.items.map((item, idx) => (
+                                <li key={idx} className="flex items-start">
+                                  <span className="mr-1">•</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold mb-2">Технологии</h3>
-                <ul className="space-y-1">
-                  {project.techStack.map((tech, index) => (
-                    <motion.li
-                      key={tech}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      {tech}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
