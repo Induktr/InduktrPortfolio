@@ -73,7 +73,7 @@
       "tags": ["Messenger", "Cross-platform", "Modern UI"],
       "links": {
         "github": "https://github.com/Induktr/brainmessenger",
-        "live": "https://brainmessenger.com"
+        "live": "https://webbrainmessenger.netlify.app/"
       }
     },
     {
@@ -123,7 +123,7 @@
       "tags": ["Construction", "Web Platform", "3D Visualization"],
       "links": {
         "github": "https://github.com/Induktr/buildko",
-        "live": "https://buildko.com"
+        "live": "https://buildko.netlify.app/"
       }
     },
     {
@@ -167,7 +167,7 @@
       "tags": ["Beauty Industry", "Web Platform", "Luxury Design"],
       "links": {
         "github": "https://github.com/Induktr/BueatyLove",
-        "live": "https://beautylove.com"
+        "live": "https://bueatylove.netlify.app/"
       }
     }
   ]
