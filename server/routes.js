@@ -1,7 +1,6 @@
-import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { createServer } from "http";
 
-export function registerRoutes(app: Express): Server {
+export function registerRoutes(app) {
   // put application routes here
   // prefix all routes with /api
 
@@ -11,4 +10,4 @@ export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
 
   return httpServer;
-}
+} 
