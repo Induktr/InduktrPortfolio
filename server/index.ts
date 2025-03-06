@@ -1,8 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import session from "express-session";
 import commentsRouter from "./routes/comments.js";
+import { createServer } from "http";
 
 const app = express();
 app.use(express.json());
@@ -56,7 +56,7 @@ app.use((req, res, next) => {
 (async () => {
   // Register routes
   app.use(commentsRouter);
-  const server = registerRoutes(app);
+  const server = createServer(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error("Error:", err);
