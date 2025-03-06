@@ -38,21 +38,47 @@ router.post("/api/comments", async (req, res) => {
     const { toolName, comment, rating } = req.body;
     console.log("Received comment data:", { toolName, comment, rating });
 
-    // For development: Get the first user from the database
-    const user = await db.select().from(users).limit(1);
-    console.log("Found user:", user[0]);
+    if (!toolName || !comment || !rating) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Get the default anonymous user or create one if it doesn't exist
+    let user = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, "anonymous"))
+      .limit(1);
+
+    // If no anonymous user exists, create one
+    if (user.length === 0) {
+      console.log("Creating anonymous user");
+      const insertedUser = await db
+        .insert(users)
+        .values({
+          username: "anonymous",
+          password: "anonymous_password",
+        })
+        .returning();
+      
+      user = insertedUser;
+    }
+
+    console.log("Using user:", user[0]);
     const userId = user[0]?.id;
 
     if (!userId) {
-      return res.status(401).json({ error: "You must be logged in to comment" });
+      return res.status(500).json({ error: "Failed to get or create anonymous user" });
     }
 
-    const newComment = await db.insert(toolComments).values({
-      userId,
-      toolName,
-      comment,
-      rating,
-    }).returning();
+    const newComment = await db
+      .insert(toolComments)
+      .values({
+        userId,
+        toolName,
+        comment,
+        rating,
+      })
+      .returning();
 
     console.log("Created comment:", newComment[0]);
     res.json(newComment[0]);
