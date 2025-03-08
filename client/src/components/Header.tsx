@@ -3,6 +3,18 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SiGithub, SiTelegram } from "react-icons/si";
 import { motion } from "framer-motion";
 import { MobileNav } from "./MobileNav";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { LogOut, User } from "lucide-react";
 
 const navItemVariants = {
   hover: { scale: 1.05, color: "hsl(var(--primary))" },
@@ -15,6 +27,8 @@ const logoVariants = {
 };
 
 export function Header() {
+  const { user, signOut } = useAuth();
+
   return (
     <motion.header 
       className="border-b"
@@ -93,6 +107,48 @@ export function Header() {
               <span className="sr-only">GitHub</span>
             </motion.a>
             <ThemeToggle />
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.username || ''} />
+                      <AvatarFallback>{user.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer w-full">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Профиль</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Выйти</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" asChild>
+                  <Link href="/signin">Войти</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/signup">Регистрация</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </nav>
       </div>
