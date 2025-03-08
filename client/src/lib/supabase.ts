@@ -43,19 +43,38 @@ export async function getToolComments(toolName: string) {
       comment,
       rating,
       created_at,
-      users (
-        username
-      )
+      user_id
     `)
     .eq('tool_name', toolName)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   
+  // Если данных нет, возвращаем пустой массив
+  if (!data || data.length === 0) {
+    return [];
+  }
+  
+  // Получаем информацию о пользователях для комментариев
+  const userIds = Array.from(new Set(data.map(comment => comment.user_id)));
+  
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, username')
+    .in('id', userIds);
+  
+  if (usersError) throw usersError;
+  
+  // Создаем карту пользователей для быстрого доступа
+  const userMap = new Map();
+  users?.forEach(user => {
+    userMap.set(user.id, user.username);
+  });
+  
   // Преобразование данных в ожидаемый формат
   return data.map((comment: any) => ({
     id: comment.id,
-    username: comment.users?.username || 'Anonymous',
+    username: userMap.get(comment.user_id) || 'Anonymous',
     comment: comment.comment,
     rating: comment.rating,
     createdAt: comment.created_at
@@ -67,11 +86,15 @@ export async function addToolComment(comment: InsertToolComment) {
   // Сначала проверяем, существует ли пользователь
   let userId;
   
-  const { data: existingUser } = await supabase
+  // Исправленный запрос для поиска пользователя
+  const { data: existingUsers, error: searchError } = await supabase
     .from('users')
     .select('id')
-    .eq('username', comment.username)
-    .single();
+    .eq('username', comment.username);
+  
+  if (searchError) throw searchError;
+  
+  const existingUser = existingUsers && existingUsers.length > 0 ? existingUsers[0] : null;
   
   if (existingUser) {
     userId = existingUser.id;
