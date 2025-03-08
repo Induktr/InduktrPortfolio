@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
+  isAuthenticating: boolean;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleSignUp = async (email: string, password: string, username: string) => {
-    setIsLoading(true);
+    setIsAuthenticating(true);
     try {
       await signUp({ email, password, username });
       toast({
@@ -90,13 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       // Добавляем небольшую задержку перед сбросом состояния загрузки
       setTimeout(() => {
-        setIsLoading(false);
+        setIsAuthenticating(false);
       }, 500);
     }
   };
 
   const handleSignIn = async (email: string, password: string) => {
-    setIsLoading(true);
+    setIsAuthenticating(true);
     try {
       await signIn({ email, password });
       toast({
@@ -136,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       // Добавляем небольшую задержку перед сбросом состояния загрузки
       setTimeout(() => {
-        setIsLoading(false);
+        setIsAuthenticating(false);
       }, 500);
     }
   };
@@ -203,6 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     isLoading,
+    isAuthenticating,
     signUp: handleSignUp,
     signIn: handleSignIn,
     signOut: handleSignOut,

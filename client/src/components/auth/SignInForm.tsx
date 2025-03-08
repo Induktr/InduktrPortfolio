@@ -27,7 +27,7 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn, isLoading } = useAuth();
+  const { signIn, isAuthenticating } = useAuth();
   const { toast } = useToast();
   const [cooldown, setCooldown] = useState(0);
   const [cooldownActive, setCooldownActive] = useState(false);
@@ -149,8 +149,8 @@ export function SignInForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading || cooldownActive}>
-              {isLoading ? (
+            <Button type="submit" className="w-full" disabled={isAuthenticating || cooldownActive}>
+              {isAuthenticating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Вход...
