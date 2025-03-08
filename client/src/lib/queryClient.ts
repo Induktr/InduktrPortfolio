@@ -1,9 +1,10 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { supabase } from './supabase';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = await res.text();
+    throw new Error(text);
   }
 }
 
@@ -12,33 +13,70 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const options: RequestInit = {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
 
+  if (data) options.body = JSON.stringify(data);
+
+  const res = await fetch(url, options);
   await throwIfResNotOk(res);
   return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
-    });
+    const [url, ...params] = queryKey as [string, ...any[]];
+    
+    try {
+      if (url.startsWith('/api/comments')) {
+        const toolName = params[0];
+        const { data, error } = await supabase
+          .from('tool_comments')
+          .select(`
+            id,
+            comment,
+            rating,
+            created_at,
+            users (
+              username
+            )
+          `)
+          .eq('tool_name', toolName)
+          .order('created_at', { ascending: false });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+        if (error) throw error;
+        
+        // Преобразование данных в ожидаемый формат
+        return data.map((comment: any) => ({
+          id: comment.id,
+          username: comment.users?.username || 'Anonymous',
+          comment: comment.comment,
+          rating: comment.rating,
+          createdAt: comment.created_at
+        }));
+      }
+      
+      // Для других запросов используем обычный fetch
+      const res = await fetch(url);
+      await throwIfResNotOk(res);
+      return res.json();
+    } catch (e: any) {
+      if (e.status === 401) {
+        if (unauthorizedBehavior === "returnNull") {
+          return null;
+        }
+      }
+      throw e;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({

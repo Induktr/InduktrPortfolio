@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type InsertComment, insertCommentSchema } from "@shared/schema.js";
-import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -14,51 +12,55 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { z } from "zod";
+import { getToolComments, addToolComment } from "@/lib/supabase";
 
 interface ToolCommentsProps {
   toolName: string;
 }
 
 type CommentWithUser = {
-  id: number;
+  id: number | string;
   username: string;
   comment: string;
   rating: number;
   createdAt: string;
 };
 
+// Схема валидации для комментария
+const commentSchema = z.object({
+  toolName: z.string(),
+  comment: z.string().min(3, "Комментарий должен содержать минимум 3 символа"),
+  rating: z.number().min(1, "Пожалуйста, выберите рейтинг"),
+  username: z.string().min(3, "Имя пользователя должно содержать минимум 3 символа")
+});
+
 export function ToolComments({ toolName }: ToolCommentsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
+  const [username, setUsername] = useState("");
 
   // Инициализация формы с валидацией через Zod
-  const form = useForm<InsertComment>({
-    resolver: zodResolver(
-      insertCommentSchema.extend({
-        rating: insertCommentSchema.shape.rating.min(1, "Пожалуйста, выберите рейтинг")
-      })
-    ),
+  const form = useForm<z.infer<typeof commentSchema>>({
+    resolver: zodResolver(commentSchema),
     defaultValues: {
       toolName,
       comment: "",
       rating: 0,
+      username: ""
     },
   });
 
-  // Запрос комментариев с сервера
+  // Запрос комментариев с Supabase
   const { data: comments = [], isLoading } = useQuery({
-    queryKey: ["/api/comments", toolName],
+    queryKey: ["tool-comments", toolName],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/comments?tool=${encodeURIComponent(toolName)}`);
-        if (!response.ok) {
-          const error = await response.text();
-          throw new Error(error || "Не удалось загрузить комментарии");
-        }
-        return response.json() as Promise<CommentWithUser[]>;
+        return await getToolComments(toolName);
       } catch (error) {
         console.error("Error fetching comments:", error);
         throw error;
@@ -66,163 +68,164 @@ export function ToolComments({ toolName }: ToolCommentsProps) {
     },
   });
 
-  // Мутация для создания нового комментария
-  const { mutate: submitComment, isPending } = useMutation({
-    mutationFn: async (commentData: InsertComment) => {
-      try {
-        console.log("Отправка комментария:", commentData);
+  // Отправка нового комментария через Supabase
+  const onSubmit = async (data: z.infer<typeof commentSchema>) => {
+    try {
+      await addToolComment({
+        tool_name: data.toolName,
+        comment: data.comment,
+        rating: data.rating,
+        username: data.username
+      });
+      
+      // Обновление кэша запроса
+      queryClient.invalidateQueries({ queryKey: ["tool-comments", toolName] });
 
-        const response = await fetch("/api/comments", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(commentData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Не удалось отправить комментарий");
-        }
-
-        return response.json();
-      } catch (error) {
-        console.error("Ошибка отправки комментария:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      // Очистка формы и обновление списка комментариев
-      queryClient.invalidateQueries({ queryKey: ["/api/comments", toolName] });
-      form.reset();
+      // Сброс формы и тост с сообщением об успехе
+      form.reset({ toolName, comment: "", rating: 0, username: "" });
       setRating(0);
+      
       toast({
-        title: "Успех",
-        description: "Ваш комментарий опубликован",
+        title: "Комментарий добавлен",
+        description: "Ваш комментарий успешно добавлен",
       });
-    },
-    onError: (error: Error) => {
-      console.error("Ошибка публикации:", error);
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось опубликовать комментарий",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Обработчик отправки формы
-  const onSubmit = form.handleSubmit((data) => {
-    if (rating === 0) {
+    } catch (error) {
+      console.error("Error submitting comment:", error);
       toast({
         title: "Ошибка",
-        description: "Пожалуйста, выберите рейтинг",
+        description: error instanceof Error ? error.message : "Не удалось отправить комментарий",
         variant: "destructive",
       });
-      return;
     }
+  };
 
-    // Подготовка данных для отправки
-    const commentData: InsertComment = {
-      ...data,
-      toolName,
-      rating: Number(rating),
-    };
-
-    console.log("Подготовленные данные:", commentData);
-    submitComment(commentData);
-  });
+  // Обработка изменения рейтинга
+  const handleRatingChange = (value: number) => {
+    setRating(value);
+    form.setValue("rating", value, {
+      shouldValidate: true,
+    });
+  };
 
   return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((value) => (
-              <Button
-                key={value}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="p-0 h-8 w-8"
-                onClick={() => {
-                  setRating(value);
-                  form.setValue("rating", value, { 
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                }}
-              >
-                <Star
-                  className={`h-6 w-6 ${
-                    value <= rating ? "fill-primary" : "fill-none"
-                  } text-primary`}
-                />
+    <div className="space-y-8">
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-xl font-bold mb-4">Добавить комментарий</h3>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Имя пользователя</FormLabel>
+                    <FormControl>
+                      <input
+                        {...field}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setUsername(e.target.value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="comment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Комментарий</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Поделитесь своим мнением..." />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Рейтинг</FormLabel>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => handleRatingChange(value)}
+                          className="cursor-pointer focus:outline-none"
+                        >
+                          {value <= rating ? (
+                            <Star className="h-6 w-6 fill-yellow-400 text-yellow-400" />
+                          ) : (
+                            <Star className="h-6 w-6 text-gray-300" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Отправка..." : "Отправить комментарий"}
               </Button>
-            ))}
-          </div>
-
-          <FormField
-            control={form.control}
-            name="comment"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ваш комментарий</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Поделитесь своими мыслями об этом инструменте..."
-                    className="min-h-[100px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="w-full"
-          >
-            {isPending ? "Публикация..." : "Опубликовать комментарий"}
-          </Button>
-        </form>
-      </Form>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Комментарии</h3>
+        <h3 className="text-xl font-bold">Комментарии ({comments.length})</h3>
+        
         {isLoading ? (
-          <p className="text-muted-foreground">Загрузка комментариев...</p>
+          <div className="flex justify-center p-6">
+            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+          </div>
         ) : comments.length === 0 ? (
-          <p className="text-muted-foreground">Пока нет комментариев. Будьте первым!</p>
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Нет комментариев. Будьте первым, кто оставит комментарий!
+            </CardContent>
+          </Card>
         ) : (
-          <AnimatePresence>
+          <div className="space-y-4">
             {comments.map((comment) => (
-              <motion.div
-                key={comment.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-card rounded-lg p-4"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">{comment.username}</span>
-                  <div className="flex">
-                    {Array.from({ length: comment.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
+              <Card key={comment.id}>
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-semibold">{comment.username}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(comment.createdAt).toLocaleDateString("ru-RU")}
+                      </p>
+                    </div>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <span key={value}>
+                          {value <= comment.rating ? (
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          ) : (
+                            <Star className="h-4 w-4 text-gray-300" />
+                          )}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <p className="text-muted-foreground">{comment.comment}</p>
-                <span className="text-xs text-muted-foreground mt-2 block">
-                  {new Date(comment.createdAt).toLocaleDateString()}
-                </span>
-              </motion.div>
+                  <p className="text-muted-foreground">{comment.comment}</p>
+                </CardContent>
+              </Card>
             ))}
-          </AnimatePresence>
+          </div>
         )}
       </div>
     </div>

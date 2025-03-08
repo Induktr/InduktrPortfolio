@@ -18,23 +18,29 @@ export const toolComments = pgTable("tool_comments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const userSchema = z.object({
+  id: z.string().uuid(),
+  username: z.string().min(3),
+  createdAt: z.string().datetime(),
 });
 
-export const insertCommentSchema = createInsertSchema(toolComments)
-  .pick({
-    toolName: true,
-    comment: true,
-    rating: true,
-  })
-  .extend({
-    rating: z.number().min(1).max(5),
-    comment: z.string().min(3).max(1000),
-  });
+export type User = z.infer<typeof userSchema>;
 
+export const insertUserSchema = userSchema.omit({ id: true, createdAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+
+export const commentSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  toolName: z.string(),
+  comment: z.string().min(3),
+  rating: z.number().min(1).max(5),
+  createdAt: z.string().datetime(),
+});
+
+export type Comment = z.infer<typeof commentSchema>;
+
+export const insertCommentSchema = commentSchema.omit({ id: true, userId: true, createdAt: true });
 export type InsertComment = z.infer<typeof insertCommentSchema>;
+
 export type ToolComment = typeof toolComments.$inferSelect;
