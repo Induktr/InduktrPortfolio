@@ -1,8 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Получаем URL и ключ из переменных окружения
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Выводим значения для отладки
+console.log('VITE_SUPABASE_URL:', supabaseUrl);
+console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Defined' : 'Undefined');
+
+// Проверяем наличие URL и ключа
+if (!supabaseUrl) {
+  throw new Error('VITE_SUPABASE_URL is not defined in environment variables');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('VITE_SUPABASE_ANON_KEY is not defined in environment variables');
+}
 
 // Создаем клиент Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -88,4 +101,4 @@ export async function addToolComment(comment: InsertToolComment) {
   
   if (error) throw error;
   return data;
-}
+} 
