@@ -139,14 +139,49 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 // Функция для обновления профиля пользователя
-export async function updateProfile(userId: string, updates: { username?: string, avatar_url?: string }) {
-  const { data, error } = await supabase
-    .from('users')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single();
-  
-  if (error) throw error;
-  return data;
+export async function updateProfile(userId: string, updates: { username?: string, avatar_url?: string | null }) {
+  try {
+    // Проверяем, что пользователь существует
+    const { data: existingUser, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (userError) {
+      console.error("Error fetching user:", userError);
+      throw new Error("Пользователь не найден");
+    }
+    
+    // Обновляем профиль пользователя
+    const { data, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
+    
+    // Обновляем метаданные пользователя в Auth
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: {
+        username: updates.username,
+        avatar_url: updates.avatar_url
+      }
+    });
+    
+    if (metadataError) {
+      console.error("Error updating user metadata:", metadataError);
+      // Не выбрасываем ошибку, так как обновление профиля уже выполнено
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("UpdateProfile error:", error);
+    throw error;
+  }
 } 

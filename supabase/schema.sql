@@ -62,6 +62,9 @@ CREATE POLICY "Пользователи могут обновлять свои �
   ON public.users FOR UPDATE 
   USING (auth.uid() = id);
 
+-- Предоставление прав на обновление таблицы users
+GRANT UPDATE ON public.users TO authenticated;
+
 -- Политики для таблицы tool_comments
 CREATE POLICY "Все могут просматривать комментарии" 
   ON public.tool_comments FOR SELECT 

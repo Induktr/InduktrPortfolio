@@ -9,7 +9,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: { username?: string; avatar_url?: string }) => Promise<void>;
+  updateProfile: (updates: { username?: string; avatar_url?: string | null }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleUpdateProfile = async (updates: { username?: string; avatar_url?: string }) => {
+  const handleUpdateProfile = async (updates: { username?: string; avatar_url?: string | null }) => {
     if (!user) return;
     
     setIsLoading(true);
@@ -148,9 +148,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: 'Ваш профиль успешно обновлен.',
       });
     } catch (error: any) {
+      console.error('UpdateProfile error:', error);
+      
+      // Определяем понятное сообщение об ошибке
+      let errorMessage = "Произошла ошибка при обновлении профиля";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      } else if (error.details) {
+        errorMessage = error.details;
+      }
+      
       toast({
         title: 'Ошибка обновления профиля',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
