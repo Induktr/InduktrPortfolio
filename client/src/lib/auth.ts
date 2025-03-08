@@ -32,7 +32,17 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       },
     });
 
-    if (authError) throw authError;
+    if (authError) {
+      // Проверяем, является ли ошибка ограничением запросов (429)
+      if (authError.status === 429) {
+        const waitTimeMatch = authError.message.match(/after (\d+) seconds/);
+        const waitTime = waitTimeMatch ? parseInt(waitTimeMatch[1]) : 20;
+        
+        throw new Error(`Слишком много запросов. Пожалуйста, подождите ${waitTime} секунд перед повторной попыткой.`);
+      }
+      
+      throw authError;
+    }
 
     if (authData.user) {
       // Создание записи в таблице users с дополнительной информацией
@@ -63,13 +73,29 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
 
 // Функция для входа пользователя
 export async function signIn({ email, password }: SignInCredentials) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      // Проверяем, является ли ошибка ограничением запросов (429)
+      if (error.status === 429) {
+        const waitTimeMatch = error.message.match(/after (\d+) seconds/);
+        const waitTime = waitTimeMatch ? parseInt(waitTimeMatch[1]) : 20;
+        
+        throw new Error(`Слишком много запросов. Пожалуйста, подождите ${waitTime} секунд перед повторной попыткой.`);
+      }
+      
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("SignIn error:", error);
+    throw error;
+  }
 }
 
 // Функция для выхода пользователя

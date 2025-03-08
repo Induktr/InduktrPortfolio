@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 const signUpSchema = z.object({
   username: z.string().min(3, 'Имя пользователя должно содержать минимум 3 символа'),
@@ -33,6 +34,22 @@ export function SignUpForm() {
   const { signUp } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [cooldown, setCooldown] = useState(0);
+  const [cooldownActive, setCooldownActive] = useState(false);
+
+  // Обработка таймера ожидания
+  useEffect(() => {
+    if (cooldown <= 0) {
+      setCooldownActive(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCooldown(prev => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -45,6 +62,16 @@ export function SignUpForm() {
   });
 
   const onSubmit = async (values: SignUpFormValues) => {
+    // Если активен таймер ожидания, не позволяем отправить форму
+    if (cooldownActive) {
+      toast({
+        title: "Подождите",
+        description: `Пожалуйста, подождите ${cooldown} секунд перед повторной попыткой`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await signUp(values.email, values.password, values.username);
@@ -67,9 +94,13 @@ export function SignUpForm() {
         errorMessage = error.details;
       }
       
-      // Если ошибка связана с политикой безопасности
-      if (error.code === '42501' || error.message?.includes('violates row-level security policy')) {
-        errorMessage = "Ошибка создания профиля пользователя. Пожалуйста, попробуйте позже.";
+      // Если ошибка связана с ограничением запросов
+      if (error.message?.includes('Слишком много запросов') || error.status === 429) {
+        const waitTimeMatch = error.message.match(/подождите (\d+) секунд/);
+        const waitTime = waitTimeMatch ? parseInt(waitTimeMatch[1]) : 20;
+        
+        setCooldown(waitTime);
+        setCooldownActive(true);
       }
       
       // Если email уже используется
@@ -94,6 +125,14 @@ export function SignUpForm() {
         <CardDescription>
           Создайте аккаунт для доступа к сервису
         </CardDescription>
+        {cooldownActive && (
+          <div className="mt-2">
+            <p className="text-sm text-muted-foreground mb-1">
+              Пожалуйста, подождите {cooldown} секунд перед повторной попыткой
+            </p>
+            <Progress value={(cooldown / 20) * 100} className="h-2" />
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>

@@ -71,9 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = error.details;
       }
       
-      // Если ошибка связана с политикой безопасности
-      if (error.code === '42501' || error.message?.includes('violates row-level security policy')) {
-        errorMessage = "Ошибка создания профиля пользователя. Пожалуйста, попробуйте позже.";
+      // Если ошибка связана с ограничением запросов
+      if (error.message?.includes('Слишком много запросов') || error.status === 429) {
+        // Сообщение уже сформировано в функции signUp
       }
       
       // Если email уже используется
@@ -101,9 +101,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: 'Добро пожаловать!',
       });
     } catch (error: any) {
+      console.error('SignIn error:', error);
+      
+      // Определяем понятное сообщение об ошибке
+      let errorMessage = "Произошла ошибка при входе";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      } else if (error.details) {
+        errorMessage = error.details;
+      }
+      
+      // Если ошибка связана с ограничением запросов
+      if (error.message?.includes('Слишком много запросов') || error.status === 429) {
+        // Сообщение уже сформировано в функции signIn
+      }
+      
+      // Если неверные учетные данные
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Неверный email или пароль";
+      }
+      
       toast({
         title: 'Ошибка входа',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
       throw error;
