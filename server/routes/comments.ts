@@ -1,5 +1,5 @@
 import { db, testDatabaseConnection } from "../db.js";
-import { toolComments, users } from "@shared/schema";
+import { toolComments, users } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
 import { Router } from "express";
 
@@ -16,32 +16,49 @@ router.get("/api/comments", async (req, res) => {
 
     // Проверка подключения к базе данных
     const isConnected = await testDatabaseConnection();
+    console.log("Database connection test result:", isConnected);
+    
     if (!isConnected) {
+      console.error("Database connection failed when fetching comments for:", toolName);
       return res.status(500).json({ error: "Database connection failed" });
     }
 
     console.log("Fetching comments for tool:", toolName);
-    const comments = await db
-      .select({
-        id: toolComments.id,
-        username: users.username,
-        comment: toolComments.comment,
-        rating: toolComments.rating,
-        createdAt: toolComments.createdAt,
-      })
-      .from(toolComments)
-      .leftJoin(users, eq(toolComments.userId, users.id))
-      .where(eq(toolComments.toolName, toolName));
+    try {
+      const comments = await db
+        .select({
+          id: toolComments.id,
+          username: users.username,
+          comment: toolComments.comment,
+          rating: toolComments.rating,
+          createdAt: toolComments.createdAt,
+        })
+        .from(toolComments)
+        .leftJoin(users, eq(toolComments.userId, users.id))
+        .where(eq(toolComments.toolName, toolName));
 
-    console.log("Found comments:", comments);
-    res.json(comments);
+      console.log("Found comments:", comments);
+      return res.json(comments);
+    } catch (dbError) {
+      console.error("Database query error:", dbError);
+      if (dbError instanceof Error) {
+        console.error("Error details:", dbError.message, dbError.stack);
+      }
+      return res.status(500).json({ 
+        error: "Database query failed", 
+        details: dbError instanceof Error ? dbError.message : String(dbError) 
+      });
+    }
   } catch (error) {
     console.error("Error fetching comments:", error);
     // Более подробная информация об ошибке
     if (error instanceof Error) {
       console.error("Error details:", error.message, error.stack);
     }
-    res.status(500).json({ error: "Failed to fetch comments", details: error instanceof Error ? error.message : String(error) });
+    return res.status(500).json({ 
+      error: "Failed to fetch comments", 
+      details: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 

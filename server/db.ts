@@ -1,7 +1,7 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 import { drizzle } from "drizzle-orm/node-postgres";
-import { users, toolComments } from "@shared/schema";
+import { users, toolComments } from "../shared/schema.js";
 
 // Логирование информации о подключении
 console.log("Initializing database connection with DATABASE_URL:", 
@@ -49,19 +49,26 @@ export const db = drizzle(pool, { schema: { users, toolComments } });
 
 // Функция для проверки подключения к базе данных
 export async function testDatabaseConnection() {
+  console.log("Testing database connection...");
   try {
     const client = await pool.connect();
     try {
       const result = await client.query('SELECT NOW()');
       console.log('Database connection test successful at:', result.rows[0].now);
       return true;
+    } catch (queryError) {
+      console.error('Database query error during connection test:', queryError);
+      if (queryError instanceof Error) {
+        console.error('Query error details:', queryError.message, queryError.stack);
+      }
+      return false;
     } finally {
       client.release();
     }
-  } catch (error) {
-    console.error('Database connection test failed:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message, error.stack);
+  } catch (connectionError) {
+    console.error('Database connection test failed - Could not connect:', connectionError);
+    if (connectionError instanceof Error) {
+      console.error('Connection error details:', connectionError.message, connectionError.stack);
     }
     return false;
   }
