@@ -58,9 +58,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: 'Пожалуйста, проверьте вашу почту для подтверждения аккаунта.',
       });
     } catch (error: any) {
+      console.error('SignUp error:', error);
+      
+      // Определяем понятное сообщение об ошибке
+      let errorMessage = "Произошла ошибка при регистрации";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      } else if (error.details) {
+        errorMessage = error.details;
+      }
+      
+      // Если ошибка связана с политикой безопасности
+      if (error.code === '42501' || error.message?.includes('violates row-level security policy')) {
+        errorMessage = "Ошибка создания профиля пользователя. Пожалуйста, попробуйте позже.";
+      }
+      
+      // Если email уже используется
+      if (error.message?.includes('email already exists')) {
+        errorMessage = "Этот email уже зарегистрирован. Пожалуйста, используйте другой email или войдите в систему.";
+      }
+      
       toast({
         title: 'Ошибка регистрации',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
       throw error;

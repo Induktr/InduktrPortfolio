@@ -20,35 +20,45 @@ export type SignInCredentials = {
 
 // Функция для регистрации нового пользователя
 export async function signUp({ email, password, username }: SignUpCredentials) {
-  // Регистрация пользователя через Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  try {
+    // Регистрация пользователя через Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+        },
+      },
+    });
 
-  if (authError) throw authError;
+    if (authError) throw authError;
 
-  if (authData.user) {
-    // Создание записи в таблице users с дополнительной информацией
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user.id,
-        username,
-        email,
-        avatar_url: null,
-      });
+    if (authData.user) {
+      // Создание записи в таблице users с дополнительной информацией
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          username,
+          email,
+          avatar_url: null,
+        });
 
-    if (profileError) {
-      // Если не удалось создать профиль, удаляем пользователя из Auth
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw profileError;
+      if (profileError) {
+        console.error("Error creating user profile:", profileError);
+        // Не удаляем пользователя из Auth, так как у нас нет прав администратора
+        throw profileError;
+      }
+
+      return authData;
     }
 
     return authData;
+  } catch (error) {
+    console.error("SignUp error:", error);
+    throw error;
   }
-
-  return authData;
 }
 
 // Функция для входа пользователя
@@ -70,25 +80,62 @@ export async function signOut() {
 
 // Функция для получения текущего пользователя
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session?.user) return null;
-  
-  // Получаем дополнительную информацию о пользователе из таблицы users
-  const { data, error } = await supabase
-    .from('users')
-    .select('username, avatar_url')
-    .eq('id', session.user.id)
-    .single();
-  
-  if (error || !data) return null;
-  
-  return {
-    id: session.user.id,
-    email: session.user.email!,
-    username: data.username,
-    avatar_url: data.avatar_url
-  };
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) return null;
+    
+    // Получаем дополнительную информацию о пользователе из таблицы users
+    const { data, error } = await supabase
+      .from('users')
+      .select('username, avatar_url')
+      .eq('id', session.user.id)
+      .single();
+    
+    if (error) {
+      // Если пользователь не найден в таблице users, создаем его
+      if (error.code === 'PGRST116') {
+        const userData = session.user.user_metadata || {};
+        const username = userData.username || session.user.email?.split('@')[0] || 'user';
+        
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: session.user.id,
+            username,
+            email: session.user.email,
+            avatar_url: userData.avatar_url || null,
+          })
+          .select('username, avatar_url')
+          .single();
+        
+        if (insertError) {
+          console.error("Error creating user profile:", insertError);
+          return null;
+        }
+        
+        return {
+          id: session.user.id,
+          email: session.user.email!,
+          username: newUser.username,
+          avatar_url: newUser.avatar_url
+        };
+      }
+      
+      console.error("Error fetching user profile:", error);
+      return null;
+    }
+    
+    return {
+      id: session.user.id,
+      email: session.user.email!,
+      username: data.username,
+      avatar_url: data.avatar_url
+    };
+  } catch (error) {
+    console.error("GetCurrentUser error:", error);
+    return null;
+  }
 }
 
 // Функция для обновления профиля пользователя

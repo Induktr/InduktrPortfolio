@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'wouter';
+import { useToast } from '@/components/ui/use-toast';
 
 const signUpSchema = z.object({
   username: z.string().min(3, 'Имя пользователя должно содержать минимум 3 символа'),
@@ -31,6 +32,7 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 export function SignUpForm() {
   const { signUp } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -47,8 +49,39 @@ export function SignUpForm() {
     try {
       await signUp(values.email, values.password, values.username);
       form.reset();
-    } catch (error) {
+      toast({
+        title: "Регистрация успешна",
+        description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
+      });
+    } catch (error: any) {
       console.error('Registration error:', error);
+      
+      // Определяем понятное сообщение об ошибке
+      let errorMessage = "Произошла ошибка при регистрации";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      } else if (error.details) {
+        errorMessage = error.details;
+      }
+      
+      // Если ошибка связана с политикой безопасности
+      if (error.code === '42501' || error.message?.includes('violates row-level security policy')) {
+        errorMessage = "Ошибка создания профиля пользователя. Пожалуйста, попробуйте позже.";
+      }
+      
+      // Если email уже используется
+      if (error.message?.includes('email already exists')) {
+        errorMessage = "Этот email уже зарегистрирован. Пожалуйста, используйте другой email или войдите в систему.";
+      }
+      
+      toast({
+        title: "Ошибка регистрации",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }

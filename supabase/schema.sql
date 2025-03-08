@@ -54,6 +54,10 @@ CREATE POLICY "Пользователи могут просматривать п
   ON public.users FOR SELECT 
   USING (true);
 
+CREATE POLICY "Пользователи могут создавать свои профили" 
+  ON public.users FOR INSERT 
+  WITH CHECK (true);
+
 CREATE POLICY "Пользователи могут обновлять свои профили" 
   ON public.users FOR UPDATE 
   USING (auth.uid() = id);
