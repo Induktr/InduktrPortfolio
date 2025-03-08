@@ -88,7 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     } finally {
-      setIsLoading(false);
+      // Добавляем небольшую задержку перед сбросом состояния загрузки
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
     }
   };
 
@@ -131,7 +134,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     } finally {
-      setIsLoading(false);
+      // Добавляем небольшую задержку перед сбросом состояния загрузки
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
     }
   };
 

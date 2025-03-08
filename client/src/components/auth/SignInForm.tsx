@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { Loader2 } from 'lucide-react';
 
 const signInSchema = z.object({
   email: z.string().email('Введите корректный email'),
@@ -26,8 +27,7 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signIn, isLoading } = useAuth();
   const { toast } = useToast();
   const [cooldown, setCooldown] = useState(0);
   const [cooldownActive, setCooldownActive] = useState(false);
@@ -65,7 +65,6 @@ export function SignInForm() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
       await signIn(values.email, values.password);
       form.reset();
@@ -102,8 +101,6 @@ export function SignInForm() {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -152,8 +149,13 @@ export function SignInForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Вход...' : 'Войти'}
+            <Button type="submit" className="w-full" disabled={isLoading || cooldownActive}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Вход...
+                </>
+              ) : 'Войти'}
             </Button>
           </form>
         </Form>

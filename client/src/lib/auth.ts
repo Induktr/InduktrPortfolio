@@ -61,9 +61,13 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
         throw profileError;
       }
 
+      // Добавляем искусственную задержку для улучшения UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
       return authData;
     }
 
+    // Добавляем искусственную задержку для улучшения UX
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return authData;
   } catch (error) {
     console.error("SignUp error:", error);
@@ -88,9 +92,16 @@ export async function signIn({ email, password }: SignInCredentials) {
         throw new Error(`Слишком много запросов. Пожалуйста, подождите ${waitTime} секунд перед повторной попыткой.`);
       }
       
+      // Проверяем, является ли ошибка неверными учетными данными
+      if (error.message?.includes('Invalid login credentials')) {
+        throw new Error('Неверный email или пароль');
+      }
+      
       throw error;
     }
     
+    // Добавляем искусственную задержку для улучшения UX
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return data;
   } catch (error) {
     console.error("SignIn error:", error);

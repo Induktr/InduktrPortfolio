@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { Loader2 } from 'lucide-react';
 
 const signUpSchema = z.object({
   username: z.string().min(3, 'Имя пользователя должно содержать минимум 3 символа'),
@@ -31,8 +32,7 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
-  const { signUp } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signUp, isLoading } = useAuth();
   const { toast } = useToast();
   const [cooldown, setCooldown] = useState(0);
   const [cooldownActive, setCooldownActive] = useState(false);
@@ -72,7 +72,6 @@ export function SignUpForm() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
       await signUp(values.email, values.password, values.username);
       form.reset();
@@ -113,8 +112,6 @@ export function SignUpForm() {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -189,8 +186,13 @@ export function SignUpForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Регистрация...' : 'Зарегистрироваться'}
+            <Button type="submit" className="w-full" disabled={isLoading || cooldownActive}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Регистрация...
+                </>
+              ) : 'Зарегистрироваться'}
             </Button>
           </form>
         </Form>
