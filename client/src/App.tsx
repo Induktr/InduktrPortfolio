@@ -4,11 +4,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { PageTransition } from "@/components/PageTransition";
 import { AnimatePresence } from "framer-motion";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { AuthProvider } from "@/lib/auth-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Home from "@/pages/Home";
 import Projects from "@/pages/Projects";
 import Tools from "@/pages/Tools";
 import Blog from "@/pages/Blog";
+import SignIn from "@/pages/SignIn";
+import SignUp from "@/pages/SignUp";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +24,8 @@ function Router() {
         <Route path="/projects" component={Projects} />
         <Route path="/tools" component={Tools} />
         <Route path="/blog" component={Blog} />
+        <Route path="/signin" component={SignIn} />
+        <Route path="/signup" component={SignUp} />
         <Route component={NotFound} />
       </Switch>
     </AnimatePresence>
@@ -33,13 +38,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="app-theme">
-        <div className="min-h-screen bg-background text-foreground">
-          <Header />
-          <PageTransition>
-            <Router />
-          </PageTransition>
-        </div>
-        <Toaster />
+        <AuthProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <Header />
+            <PageTransition>
+              <Router />
+            </PageTransition>
+          </div>
+          <Toaster />
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
