@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from 'postgres';
 import { users, toolComments } from "@shared/schema";
 
 // Создаем клиент Supabase
@@ -8,21 +9,13 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Создаем клиент Drizzle для работы с Supabase через PostgreSQL
-const pool = {
-  query: async (sql: string, params: any[]) => {
-    const { data, error } = await supabase.rpc('pg_query', {
-      query_text: sql,
-      params_array: params
-    });
-    
-    if (error) throw error;
-    return data;
-  }
-};
+// Создаем клиент postgres для Drizzle
+// Используем DATABASE_URL из переменных окружения
+const connectionString = process.env.DATABASE_URL || '';
+const client = postgres(connectionString);
 
 // Экспортируем Drizzle клиент для работы с базой данных
-export const db = drizzle(pool, { schema: { users, toolComments } });
+export const db = drizzle(client, { schema: { users, toolComments } });
 
 // Тестируем подключение
 supabase.from('users').select('count(*)').then(({ data, error }) => {
