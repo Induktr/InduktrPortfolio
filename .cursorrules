@@ -101,10 +101,45 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - Add debug information to stderr while keeping the main output clean in stdout for better pipeline integration
 - When using seaborn styles in matplotlib, use 'seaborn-v0_8' instead of 'seaborn' as the style name due to recent seaborn version changes
 - Use 'gpt-4o' as the model name for OpenAI's GPT-4 with vision capabilities
+- For SPA applications deployed on Vercel, configure vercel.json to handle client-side routing by redirecting all routes to index.html
+- When using Drizzle with PostgreSQL, use the postgres package directly with a connection string rather than trying to use Supabase's RPC functions
 
 # Scratchpad
 
-## Current Task: Resolving Module Import Errors
+## Current Task: Fixing 404 Error and Database Connection Issues
+
+[X] Identified the issues:
+   - 404 NOT_FOUND error after page refresh on Vercel deployment
+   - TypeScript error in server/db.ts with Drizzle and Supabase integration
+
+[X] Fixed client-side routing in vercel.json:
+   - Added "handle": "filesystem" rule
+   - Changed fallback route to serve index.html for all routes
+
+[X] Fixed database connection in server/db.ts:
+   - Changed from using Supabase RPC to direct Postgres connection
+   - Using DATABASE_URL environment variable
+
+[X] Committed and pushed changes to GitHub
+[X] Deployed to Vercel production
+
+### Environment Variables in Vercel
+- Verified that DATABASE_URL is set in Vercel
+- Verified that SUPABASE_URL and SUPABASE_SERVICE_KEY are set in Vercel
+- Verified that NODE_ENV is set to "production" in Vercel
+
+### Deployment Status
+- Application successfully deployed to Vercel
+- Production URL: https://induktr-portfolio-nikitsbrainm-nikitsbrainms-projects.vercel.app
+- Custom domain (www.induktr.com) is already assigned to another project
+
+### Next Steps
+- Test the application to ensure the 404 error is resolved
+- Test user registration and login functionality
+- Verify that database connections are working properly
+- If needed, configure the custom domain properly in Vercel
+
+## Previous Task: Resolving Module Import Errors
 
 [X] Identified the error: "Cannot find module 'express' or its corresponding type declarations"
 [X] Checked package.json - express and @types/express are already installed
