@@ -8,10 +8,10 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticating: boolean;
   signUp: (email: string, password: string, username: string) => Promise<any>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateProfile: (updates: { username?: string; avatar_url?: string | null }) => Promise<void>;
-  resendConfirmationEmail: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signOut: () => Promise<any>;
+  updateProfile: (updates: { username?: string; avatar_url?: string | null }) => Promise<any>;
+  resendConfirmationEmail: (email: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
