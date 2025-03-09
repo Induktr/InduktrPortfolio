@@ -72,179 +72,74 @@ export async function setupVite(app: Express, server: Server) {
 
 export function serveStatic(app: Express) {
   try {
-    log("Starting serveStatic function");
+    log("Starting serveStatic function in API mode");
     
-    // В Vercel мы пытаемся найти директорию в нескольких местах
-    let distPath = null;
-    const possiblePaths = [
-      // Vercel - попробуем разные пути
-      path.join(process.cwd(), "dist", "public"),
-      path.join(process.cwd(), "public"),
-      // Локальная разработка
-      path.join(__dirname, "public"),
-      path.join(__dirname, "..", "dist", "public"),
-      path.join(__dirname, "..", "public")
-    ];
-
-    // Логируем все возможные пути для диагностики
-    log(`Current working directory: ${process.cwd()}`);
-    log(`Current __dirname: ${__dirname}`);
-    log(`Checking these paths:`);
-    possiblePaths.forEach((p, index) => {
-      log(`Path ${index + 1}: ${p} - Exists: ${fs.existsSync(p)}`);
-    });
-
-    // Найдем первый существующий путь
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        distPath = p;
-        log(`Found static files at: ${distPath}`);
-        break;
-      }
-    }
-
-    // Если ни один путь не найден, используем дефолтный
-    if (!distPath) {
-      log("Warning: Could not find build directory, using default");
-      distPath = path.join(process.cwd(), "dist", "public");
-      
-      // Попробуем создать директорию, если она не существует
-      try {
-        if (!fs.existsSync(distPath)) {
-          log(`Creating directory: ${distPath}`);
-          fs.mkdirSync(distPath, { recursive: true });
-        }
-      } catch (error) {
-        log(`Error creating directory: ${error}`);
-      }
-    }
-
-    // Проверим содержимое директории
-    try {
-      const files = fs.readdirSync(distPath);
-      log(`Files in ${distPath}: ${files.join(', ')}`);
-      
-      // Проверим наличие index.html
-      const indexPath = path.join(distPath, "index.html");
-      const indexExists = fs.existsSync(indexPath);
-      log(`index.html exists: ${indexExists}`);
-      
-      if (!indexExists) {
-        // Если index.html не существует, создадим заглушку
-        log("Creating fallback index.html");
-        const fallbackHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Fallback Page</title>
-</head>
-<body>
-  <h1>Fallback Index Page</h1>
-  <p>This is a fallback page created because the original index.html was not found.</p>
-</body>
-</html>`;
-        fs.writeFileSync(indexPath, fallbackHtml);
-      }
-    } catch (error) {
-      log(`Error checking directory contents: ${error}`);
-    }
-
-    // Настройка статических файлов
-    app.use(express.static(distPath, {
-      maxAge: 31536000000 // 1 год в миллисекундах для кеширования статических ресурсов
-    }));
-
-    // Простой обработчик для корневого маршрута
-    app.get('/', (req, res) => {
-      log('Root route requested');
-      try {
-        res.sendFile(path.join(distPath, "index.html"));
-      } catch (error) {
-        log(`Error serving index.html for root route: ${error}`);
-        res.status(200).send(`
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <title>Induktr</title>
-          </head>
-          <body>
-            <h1>Welcome to Induktr</h1>
-            <p>This is a fallback page.</p>
-          </body>
-          </html>
-        `);
-      }
-    });
-
-    // Определяем клиентские маршруты SPA
-    const clientRoutes = ['/projects', '/tools', '/blog', '/signin', '/signup', '/profile'];
-    
-    // Явно обрабатываем клиентские маршруты
-    clientRoutes.forEach(route => {
-      app.get(route, (req, res) => {
-        log(`SPA route requested: ${req.path}`);
-        try {
-          res.sendFile(path.join(distPath, "index.html"));
-        } catch (error) {
-          log(`Error serving index.html for ${req.path}: ${error}`);
-          res.status(200).send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <title>Induktr - ${req.path}</title>
-            </head>
-            <body>
-              <h1>Induktr - ${req.path}</h1>
-              <p>This is a fallback page for the ${req.path} route.</p>
-            </body>
-            </html>
-          `);
-        }
+    // В продакшене мы позволяем Vercel настройкам обрабатывать статические файлы
+    // и отвечаем только за API маршруты
+    if (process.env.NODE_ENV === 'production') {
+      // Добавим обработчик, который логирует все API запросы
+      app.use('/api', (req, res, next) => {
+        log(`API request: ${req.method} ${req.path}`);
+        next();
       });
-    });
-
-    // Обрабатываем все остальные запросы, направляя их на index.html
-    app.use("*", (req, res) => {
-      log(`Fallback route requested: ${req.path}`);
-      try {
-        res.sendFile(path.join(distPath, "index.html"));
-      } catch (error) {
-        log(`Error serving index.html for fallback route ${req.path}: ${error}`);
+      
+      // Все другие маршруты, которые достигают сервера
+      app.use('*', (req, res) => {
+        log(`Non-API request reached server: ${req.method} ${req.originalUrl}`);
         res.status(200).send(`
           <!DOCTYPE html>
           <html lang="en">
           <head>
             <meta charset="UTF-8">
-            <title>Induktr - ${req.path}</title>
+            <title>API Server</title>
           </head>
           <body>
-            <h1>Induktr - Fallback</h1>
-            <p>This is a fallback page for the ${req.path} route.</p>
+            <h1>API Server</h1>
+            <p>This endpoint is the API server. Client-side routes should be handled by Vercel routing.</p>
+            <p>Requested path: ${req.originalUrl}</p>
           </body>
           </html>
         `);
+      });
+      
+      return;
+    }
+    
+    // В режиме разработки обрабатываем статические файлы как обычно
+    const distPath = path.resolve(__dirname, "..", "dist", "public");
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      log(`Serving static files from ${distPath}`);
+    } else {
+      log(`Warning: Could not find build directory: ${distPath}`);
+    }
+    
+    app.use("*", (req, res) => {
+      const indexPath = path.resolve(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Not found");
       }
     });
     
-    log("serveStatic function completed successfully");
+    log("serveStatic function completed");
   } catch (error) {
-    log(`Fatal error in serveStatic: ${error}`);
+    log(`Error in serveStatic: ${error}`);
     
-    // Добавляем экстренный обработчик для всех маршрутов
+    // Обработчик ошибок
     app.use("*", (req, res) => {
-      res.status(200).send(`
+      res.status(500).send(`
         <!DOCTYPE html>
         <html lang="en">
         <head>
           <meta charset="UTF-8">
-          <title>Error Recovery</title>
+          <title>Server Error</title>
         </head>
         <body>
-          <h1>Emergency Fallback Page</h1>
-          <p>The server encountered an error but is recovering.</p>
-          <p>Requested path: ${req.path}</p>
+          <h1>Server Error</h1>
+          <p>The server encountered an error.</p>
+          <p>Requested path: ${req.originalUrl}</p>
         </body>
         </html>
       `);
