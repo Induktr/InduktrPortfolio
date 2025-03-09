@@ -79,10 +79,25 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Настройка статических файлов
+  app.use(express.static(distPath, {
+    maxAge: 31536000000 // 1 год в миллисекундах для кеширования статических ресурсов
+  }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  // Определяем клиентские маршруты SPA
+  const clientRoutes = ['/projects', '/tools', '/blog', '/signin', '/signup', '/profile'];
+  
+  // Явно обрабатываем клиентские маршруты
+  clientRoutes.forEach(route => {
+    app.get(route, (req, res) => {
+      log(`SPA route requested: ${req.path}`);
+      res.sendFile(path.resolve(distPath, "index.html"));
+    });
+  });
+
+  // Обрабатываем все остальные запросы, направляя их на index.html
+  app.use("*", (req, res) => {
+    log(`Fallback route requested: ${req.path}`);
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
