@@ -71,12 +71,31 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
+  // В Vercel мы пытаемся найти директорию в нескольких местах
+  let distPath;
+  const possiblePaths = [
+    // Локальная разработка
+    path.resolve(__dirname, "public"),
+    // Vercel - попробуем разные пути
+    path.resolve(process.cwd(), "dist/public"),
+    path.resolve(process.cwd(), "public"),
+    path.resolve(__dirname, "../public"),
+    path.resolve(__dirname, "../dist/public")
+  ];
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+  // Найдем первый существующий путь
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      distPath = p;
+      log(`Found static files at: ${distPath}`);
+      break;
+    }
+  }
+
+  // Если ни один путь не найден, используем default
+  if (!distPath) {
+    log("Warning: Could not find build directory, using default");
+    distPath = path.resolve(process.cwd(), "dist/public");
   }
 
   // Настройка статических файлов
@@ -91,13 +110,23 @@ export function serveStatic(app: Express) {
   clientRoutes.forEach(route => {
     app.get(route, (req, res) => {
       log(`SPA route requested: ${req.path}`);
-      res.sendFile(path.resolve(distPath, "index.html"));
+      try {
+        res.sendFile(path.join(distPath, "index.html"));
+      } catch (error) {
+        log(`Error serving index.html for ${req.path}: ${error}`);
+        res.status(500).send("Internal Server Error");
+      }
     });
   });
 
   // Обрабатываем все остальные запросы, направляя их на index.html
   app.use("*", (req, res) => {
     log(`Fallback route requested: ${req.path}`);
-    res.sendFile(path.resolve(distPath, "index.html"));
+    try {
+      res.sendFile(path.join(distPath, "index.html"));
+    } catch (error) {
+      log(`Error serving index.html for fallback route ${req.path}: ${error}`);
+      res.status(500).send("Internal Server Error");
+    }
   });
 }
