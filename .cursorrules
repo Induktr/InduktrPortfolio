@@ -112,7 +112,7 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
    - 404 NOT_FOUND error after page refresh on Vercel deployment
    - TypeScript error in server/db.ts with Drizzle and Supabase integration
 
-[X] Fixed client-side routing in vercel.json:
+[X] Fixed client-side routing in vercel.json (first attempt):
    - Added "handle": "filesystem" rule
    - Changed fallback route to serve index.html for all routes
 
@@ -122,6 +122,13 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 [X] Committed and pushed changes to GitHub
 [X] Deployed to Vercel production
+
+[X] Improved client-side routing in vercel.json (second attempt):
+   - Removed "handle": "filesystem" rule
+   - Added specific routes for static assets (/assets/*)
+   - Added specific route for favicon.ico
+   - Added Cache-Control header to prevent caching issues
+   - Ensured all other routes point to index.html for SPA routing
 
 ### Environment Variables in Vercel
 - Verified that DATABASE_URL is set in Vercel
