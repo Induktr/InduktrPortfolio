@@ -79,20 +79,10 @@ export function serveStatic(app: Express) {
     );
   }
 
-  // Сначала проверяем, существует ли запрашиваемый файл
-  app.use(express.static(distPath, {
-    // Не отправлять 404 для отсутствующих файлов, чтобы мы могли обработать их ниже
-    fallthrough: true
-  }));
+  app.use(express.static(distPath));
 
-  // Обрабатываем API-маршруты
-  app.use("/api/*", (req, res) => {
-    res.status(404).json({ error: "API endpoint not found" });
-  });
-
-  // Для всех остальных маршрутов отправляем index.html
-  app.use("*", (req, res) => {
-    log(`Serving index.html for client-side route: ${req.originalUrl}`);
+  // fall through to index.html if the file doesn't exist
+  app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

@@ -1,6 +1,0 @@
-RewriteEngine On
-# Если запрос не к файлу и не к директории
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-# Перенаправляем на index.html
-RewriteRule ^ index.html [QSA,L] 
