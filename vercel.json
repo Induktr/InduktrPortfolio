@@ -19,11 +19,19 @@
       "dest": "server/index.ts"
     },
     {
-      "handle": "filesystem"
+      "src": "/assets/(.*)",
+      "dest": "dist/public/assets/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "dist/public/favicon.ico"
     },
     {
       "src": "/(.*)",
-      "dest": "dist/public/index.html"
+      "dest": "dist/public/index.html",
+      "headers": {
+        "Cache-Control": "s-maxage=0"
+      }
     }
   ]
 } 
