@@ -1,70 +1,80 @@
 import { createClient } from '@supabase/supabase-js';
+import { logWithTimestamp } from './logger';
 
 // Получаем URL и ключ из переменных окружения
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Выводим значения для отладки
-console.log('VITE_SUPABASE_URL:', supabaseUrl);
-console.log('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Defined' : 'Undefined');
+// Информация для отладки
+console.log('Supabase URL defined:', !!supabaseUrl);
+console.log('Supabase Anon Key defined:', !!supabaseAnonKey);
 
-// Проверяем наличие URL и ключа
-if (!supabaseUrl) {
-  throw new Error('VITE_SUPABASE_URL is not defined in environment variables');
-}
+// Убедимся, что URL и ключ определены
+if (!supabaseUrl) throw new Error('Missing VITE_SUPABASE_URL');
+if (!supabaseAnonKey) throw new Error('Missing VITE_SUPABASE_ANON_KEY');
 
-if (!supabaseAnonKey) {
-  throw new Error('VITE_SUPABASE_ANON_KEY is not defined in environment variables');
-}
+// Более длительный таймаут для всех запросов
+const REQUEST_TIMEOUT = 50000; // 50 секунд
 
-// Создаем клиент Supabase с таймаутами и расширенными настройками
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Создаем экземпляр клиента Supabase с расширенной конфигурацией
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit', // Используем implicit flow для более простой авторизации
+    flowType: 'implicit',
   },
   global: {
     headers: {
       'Content-Type': 'application/json',
-      'X-Client-Info': 'inDuktr Portfolio App'
+      'X-Client-Info': `Induktr Web v${import.meta.env.VITE_APP_VERSION || '1.0.0'}`,
     },
+    // Расширенный fetch с таймаутом и логированием
     fetch: (url, options = {}) => {
-      // Устанавливаем таймаут для fetch запросов в 30 секунд (увеличиваем с 10)
+      logWithTimestamp('debug', `Supabase fetch request to: ${url.toString()}`);
+      
+      // Создаем контроллер для прерывания запроса
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        logWithTimestamp('warn', `Aborting request to ${url.toString()} due to timeout (${REQUEST_TIMEOUT}ms)`);
+      }, REQUEST_TIMEOUT);
       
-      console.log('Supabase fetch request to:', url);
-      
-      // Использование стандартного fetch с таймаутом
-      return fetch(url, {
+      // Объединяем наши опции с опциями по умолчанию
+      const fetchOptions = {
         ...options,
         signal: controller.signal,
-        credentials: 'same-origin',
-      })
-        .then(response => {
+      };
+      
+      return fetch(url, fetchOptions)
+        .then((response) => {
           clearTimeout(timeoutId);
-          console.log('Supabase response status:', response.status);
+          logWithTimestamp('debug', `Supabase response status: ${response.status}`);
           return response;
         })
-        .catch(error => {
+        .catch((error) => {
           clearTimeout(timeoutId);
-          console.error('Supabase fetch error:', error.name, error.message);
           if (error.name === 'AbortError') {
-            throw new Error('Запрос был прерван из-за таймаута. Пожалуйста, попробуйте снова.');
+            logWithTimestamp('error', `Request to ${url.toString()} timed out after ${REQUEST_TIMEOUT}ms`);
+            throw new Error(`Превышено время ожидания (${Math.floor(REQUEST_TIMEOUT/1000)}с) при выполнении операции`);
           }
+          logWithTimestamp('error', `Fetch error for ${url.toString()}: ${error.message}`);
           throw error;
         });
-    }
+    },
   },
   realtime: {
-    timeout: 30000,
+    params: {
+      eventsPerSecond: 10,
+    },
+    timeout: 50000, // 50 секунд для realtime соединений
   },
   db: {
     schema: 'public',
-  }
+  },
 });
+
+export default supabase;
 
 // Типы для работы с комментариями
 export type ToolComment = {

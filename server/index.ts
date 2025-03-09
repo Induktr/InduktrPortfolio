@@ -4,23 +4,39 @@ import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import cors from "cors";
 import dotenv from "dotenv";
+import apiRoutes from "./api"; // Импортируем API роуты
 
 // Загружаем переменные окружения
 dotenv.config();
 
 const app = express();
 
-// Настройка CORS
-app.use(cors({
-  origin: true, // Разрешить запросы с любого домена
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Client-Info", "apikey", "Access-Control-Allow-Origin"]
-}));
+// Настройка CORS для разработки
+app.use(
+  cors({
+    origin: true, // Разрешаем любые кросс-доменные запросы
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'X-CSRF-Token',
+      'X-Client-Info',
+      'apikey',
+      'X-Supabase-Auth',
+      'Access-Control-Allow-Origin',
+    ],
+    maxAge: 86400, // Увеличенное время кэширования CORS (24 часа)
+  })
+);
 
-// Добавляем middleware для отладки запросов
+// Добавляем middleware для логирования запросов
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} [${req.method}] ${req.url}`);
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url}`);
   next();
 });
 
@@ -72,6 +88,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Добавляем API роуты
+app.use('/api', apiRoutes);
+
+// Регистрируем основные маршруты через функцию registerRoutes
 (async () => {
   // Регистрируем маршруты через функцию registerRoutes
   const server = registerRoutes(app);

@@ -19,8 +19,11 @@ export type SignInCredentials = {
 };
 
 // Константы таймаутов
-const AUTH_OPERATION_TIMEOUT = 20000; // Увеличиваем до 20 секунд
-const ARTIFICIAL_DELAY = 500; // Уменьшаем до 500 мс
+const AUTH_OPERATION_TIMEOUT = 40000; // Увеличиваем до 40 секунд
+const PING_TIMEOUT = 10000; // 10 секунд для пинга
+const PROFILE_CREATION_TIMEOUT = 30000; // 30 секунд для создания профиля
+const SESSION_TIMEOUT = 15000; // 15 секунд для получения сессии
+const ARTIFICIAL_DELAY = 500; // 500 мс для UX
 
 // Вспомогательная функция для логирования с временной меткой
 function logWithTimestamp(type: 'info' | 'error' | 'warn', message: string, data?: any) {
@@ -63,7 +66,7 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     try {
       const { data: pingData, error: pingError } = await withTimeout(
         supabase.from('ping').select('*').limit(1) as unknown as Promise<any>,
-        5000,
+        PING_TIMEOUT,
         'проверка соединения'
       );
       
@@ -127,41 +130,68 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       throw new Error('Ошибка регистрации: не удалось создать пользователя');
     }
 
-    startTime = Date.now();
-    // Создание записи в таблице users
-    try {
-      logWithTimestamp('info', 'Creating user profile in users table');
-      
-      const { data: profileData, error: profileError } = await withTimeout(
-        supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            username,
-            email,
-            avatar_url: null,
-          })
-          .select()
-          .single() as unknown as Promise<any>,
-        10000,
-        'создания профиля'
-      );
+    // Создание записи в таблице users - с повторными попытками
+    let profileCreated = false;
+    let profileError = null;
+    let profileData = null;
+    let retryCount = 0;
+    const maxRetries = 3;
 
-      if (profileError) {
-        logWithTimestamp('error', "Error creating user profile:", profileError);
+    while (!profileCreated && retryCount < maxRetries) {
+      try {
+        logWithTimestamp('info', `Creating user profile in users table (attempt ${retryCount + 1}/${maxRetries})`);
         
-        // Если это ошибка дублирования записи, возможно пользователь уже существует
-        if (profileError.code === '23505') { // PostgreSQL уникальный индекс нарушен
-          logWithTimestamp('info', 'User profile likely already exists, continuing...');
+        const result = await withTimeout(
+          supabase
+            .from('users')
+            .insert({
+              id: authData.user.id,
+              username,
+              email,
+              avatar_url: null,
+            })
+            .select()
+            .single() as unknown as Promise<any>,
+          PROFILE_CREATION_TIMEOUT,
+          'создания профиля'
+        );
+
+        profileData = result.data;
+        profileError = result.error;
+        
+        if (profileError) {
+          logWithTimestamp('error', `Error creating user profile (attempt ${retryCount + 1}/${maxRetries}):`, profileError);
+          
+          // Если это ошибка дублирования записи, возможно пользователь уже существует
+          if (profileError.code === '23505') { // PostgreSQL уникальный индекс нарушен
+            logWithTimestamp('info', 'User profile likely already exists, continuing...');
+            profileCreated = true;
+            break;
+          } else {
+            logWithTimestamp('warn', `Non-critical profile creation error (attempt ${retryCount + 1}/${maxRetries}):`, profileError.message);
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+              logWithTimestamp('info', `Retrying profile creation in 1 second... (${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
         } else {
-          logWithTimestamp('warn', 'Non-critical profile creation error:', profileError.message);
+          logWithTimestamp('info', `User profile created successfully on attempt ${retryCount + 1}/${maxRetries}:`, profileData);
+          profileCreated = true;
         }
-      } else {
-        logWithTimestamp('info', `User profile created successfully in ${Date.now() - startTime}ms:`, profileData);
+      } catch (error) {
+        logWithTimestamp('error', `Exception during user profile creation (attempt ${retryCount + 1}/${maxRetries}):`, error);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          logWithTimestamp('info', `Retrying profile creation in 1 second... (${retryCount}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          // После всех попыток, продолжаем процесс - пользователя можно будет создать позже
+          logWithTimestamp('warn', 'All profile creation attempts failed, but continuing with signup process');
+        }
       }
-    } catch (profileError) {
-      logWithTimestamp('error', 'Exception during user profile creation:', profileError);
-      // Продолжаем выполнение, так как аутентификация прошла успешно
     }
 
     // Делаем искусственную задержку (минимальную), чтобы улучшить UX
@@ -176,22 +206,33 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     // Получаем текущую сессию для проверки успешности аутентификации
     startTime = Date.now();
     logWithTimestamp('info', 'Fetching session after signup');
-    const { data: session, error: sessionError } = await withTimeout(
-      supabase.auth.getSession(),
-      5000,
-      'получения сессии'
-    );
-    
-    if (sessionError) {
-      logWithTimestamp('error', 'Error getting session after signup:', sessionError);
-    } else {
-      logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${session?.session ? 'Available' : 'Not available'}`);
+
+    let sessionData = null;
+    let sessionError = null;
+
+    try {
+      const sessionResult = await withTimeout(
+        supabase.auth.getSession(),
+        SESSION_TIMEOUT,
+        'получения сессии'
+      );
+      
+      sessionData = sessionResult.data;
+      sessionError = sessionResult.error;
+    } catch (error) {
+      // В случае таймаута при получении сессии - просто логируем и продолжаем
+      logWithTimestamp('warn', 'Session fetch timed out, but continuing with signup process:', error);
+      sessionError = error;
     }
     
-    logWithTimestamp('info', 'Signup process completed successfully');
+    if (sessionError) {
+      logWithTimestamp('warn', 'Error getting session after signup, but continuing:', sessionError);
+    } else {
+      logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${sessionData?.session ? 'Available' : 'Not available'}`);
+    }
     
     // Явно указываем, что требуется подтверждение email, если сессия не создана
-    if (!session?.session) {
+    if (!sessionData?.session) {
       logWithTimestamp('info', 'Email confirmation required, setting flag to true');
       (authData as any).emailConfirmationRequired = true;
     } else {
