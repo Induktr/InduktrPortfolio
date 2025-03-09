@@ -17,7 +17,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const signInSchema = z.object({
   email: z.string().email('Введите корректный email'),
@@ -31,14 +32,8 @@ export function SignInForm() {
   const { toast } = useToast();
   const [cooldown, setCooldown] = useState(0);
   const [cooldownActive, setCooldownActive] = useState(false);
-
-  const form = useForm<SignInFormValues>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loginStarted, setLoginStarted] = useState(false);
 
   // Обработка таймера ожидания
   useEffect(() => {
@@ -54,6 +49,14 @@ export function SignInForm() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
+  const form = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
   const onSubmit = async (values: SignInFormValues) => {
     // Если активен таймер ожидания, не позволяем отправить форму
     if (cooldownActive) {
@@ -65,11 +68,21 @@ export function SignInForm() {
       return;
     }
 
+    setErrorMessage(null);
+    setLoginStarted(true);
+
     try {
+      console.log("Starting login process...");
       await signIn(values.email, values.password);
-      form.reset();
+      
+      toast({
+        title: "Вход выполнен",
+        description: "Вы успешно вошли в систему",
+      });
+      setLoginStarted(false);
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login error caught in form:', error);
+      setLoginStarted(false);
       
       // Определяем понятное сообщение об ошибке
       let errorMessage = "Произошла ошибка при входе";
@@ -82,6 +95,8 @@ export function SignInForm() {
         errorMessage = error.details;
       }
       
+      setErrorMessage(errorMessage);
+      
       // Если ошибка связана с ограничением запросов
       if (error.message?.includes('Слишком много запросов') || error.status === 429) {
         const waitTimeMatch = error.message.match(/подождите (\d+) секунд/);
@@ -93,7 +108,7 @@ export function SignInForm() {
       
       // Если неверные учетные данные
       if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = "Неверный email или пароль";
+        errorMessage = "Неверный email или пароль. Пожалуйста, проверьте введенные данные.";
       }
       
       toast({
@@ -104,12 +119,18 @@ export function SignInForm() {
     }
   };
 
+  // Состояние кнопки
+  const isButtonDisabled = isAuthenticating || cooldownActive || loginStarted;
+  const buttonText = loginStarted ? "Вход..." : 
+                    isAuthenticating ? "Обработка..." : 
+                    "Войти";
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Вход</CardTitle>
         <CardDescription>
-          Войдите в свой аккаунт
+          Войдите в ваш аккаунт
         </CardDescription>
         {cooldownActive && (
           <div className="mt-2">
@@ -121,6 +142,16 @@ export function SignInForm() {
         )}
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Ошибка</AlertTitle>
+            <AlertDescription>
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -130,7 +161,7 @@ export function SignInForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="example@mail.com" {...field} />
+                    <Input type="email" placeholder="example@mail.com" {...field} disabled={isButtonDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,19 +174,24 @@ export function SignInForm() {
                 <FormItem>
                   <FormLabel>Пароль</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="******" {...field} />
+                    <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isAuthenticating || cooldownActive}>
-              {isAuthenticating ? (
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                Забыли пароль?
+              </Link>
+            </div>
+            <Button type="submit" className="w-full" disabled={isButtonDisabled}>
+              {isButtonDisabled ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Вход...
+                  {buttonText}
                 </>
-              ) : 'Войти'}
+              ) : buttonText}
             </Button>
           </form>
         </Form>

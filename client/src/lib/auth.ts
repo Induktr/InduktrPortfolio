@@ -18,24 +18,50 @@ export type SignInCredentials = {
   password: string;
 };
 
+// Вспомогательная функция для логирования с временной меткой
+function logWithTimestamp(type: 'info' | 'error' | 'warn', message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logFn = type === 'info' ? console.log : type === 'error' ? console.error : console.warn;
+  
+  if (data) {
+    logFn(`[${timestamp}] ${message}`, data);
+  } else {
+    logFn(`[${timestamp}] ${message}`);
+  }
+}
+
 // Функция для регистрации нового пользователя
 export async function signUp({ email, password, username }: SignUpCredentials) {
+  let startTime = Date.now();
+  logWithTimestamp('info', `Starting signup process for email: ${email}, username: ${username}`);
+  
   try {
-    console.log('Attempting to sign up user:', { email, username });
+    // Проверяем подключение к Supabase перед выполнением регистрации
+    try {
+      const { data: pingData, error: pingError } = await supabase.from('ping').select('*').limit(1);
+      if (pingError) {
+        logWithTimestamp('warn', 'Supabase connection test failed, but continuing with signup', pingError);
+      } else {
+        logWithTimestamp('info', 'Supabase connection test successful');
+      }
+    } catch (pingError) {
+      logWithTimestamp('warn', 'Supabase ping test failed with exception, but continuing', pingError);
+    }
     
-    // Регистрация пользователя через Supabase Auth
+    // Регистрация пользователя через Supabase Auth - без опций метаданных
+    logWithTimestamp('info', 'Calling supabase.auth.signUp');
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          username,
-        },
-      },
+        data: { username }  // Теперь передаем username сразу при создании
+      }
     });
 
+    logWithTimestamp('info', `Auth signUp completed in ${Date.now() - startTime}ms with status: ${authData ? 'success' : 'error'}`);
+
     if (authError) {
-      console.error('Auth error during signup:', authError);
+      logWithTimestamp('error', 'Auth error during signup:', authError);
       
       // Проверяем, является ли ошибка ограничением запросов (429)
       if (authError.status === 429) {
@@ -50,72 +76,106 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
         throw new Error(`Проблема с сетью. Пожалуйста, проверьте подключение и попробуйте снова.`);
       }
       
+      // Если email уже используется
+      if (authError.message?.includes('already exists')) {
+        throw new Error(`Email ${email} уже зарегистрирован. Пожалуйста, используйте другой email или войдите в систему.`);
+      }
+      
       throw authError;
     }
 
-    console.log('Auth data after signup:', authData);
+    logWithTimestamp('info', 'Auth data after signup:', authData);
 
-    if (!authData.user) {
-      console.error('No user data returned from signup');
+    if (!authData || !authData.user) {
+      logWithTimestamp('error', 'No user data returned from signup');
       throw new Error('Ошибка регистрации: не удалось создать пользователя');
     }
 
-    if (authData.user) {
-      try {
-        // Создание записи в таблице users с дополнительной информацией
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            username,
-            email,
-            avatar_url: null,
-          });
-  
-        if (profileError) {
-          console.error("Error creating user profile:", profileError);
-          // Не удаляем пользователя из Auth, так как у нас нет прав администратора
-          
-          // Если это ошибка дублирования записи, возможно пользователь уже существует
-          if (profileError.code === '23505') { // PostgreSQL уникальный индекс нарушен
-            console.log('User profile likely already exists, continuing...');
-          } else {
-            throw profileError;
-          }
-        }
-      } catch (profileError) {
-        console.error('Error during user profile creation:', profileError);
-        // Продолжаем выполнение, так как аутентификация прошла успешно
-      }
+    startTime = Date.now();
+    // Создание записи в таблице users
+    try {
+      logWithTimestamp('info', 'Creating user profile in users table');
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          username,
+          email,
+          avatar_url: null,
+        })
+        .select()
+        .single();
 
-      // Добавляем искусственную задержку для улучшения UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Signup successful, returning auth data');
-      return authData;
+      if (profileError) {
+        logWithTimestamp('error', "Error creating user profile:", profileError);
+        
+        // Если это ошибка дублирования записи, возможно пользователь уже существует
+        if (profileError.code === '23505') { // PostgreSQL уникальный индекс нарушен
+          logWithTimestamp('info', 'User profile likely already exists, continuing...');
+        } else {
+          logWithTimestamp('warn', 'Non-critical profile creation error:', profileError.message);
+        }
+      } else {
+        logWithTimestamp('info', `User profile created successfully in ${Date.now() - startTime}ms:`, profileData);
+      }
+    } catch (profileError) {
+      logWithTimestamp('error', 'Exception during user profile creation:', profileError);
+      // Продолжаем выполнение, так как аутентификация прошла успешно
     }
 
     // Добавляем искусственную задержку для улучшения UX
+    logWithTimestamp('info', 'Adding artificial delay for UX improvement');
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Signup process completed');
+    
+    // Получаем текущую сессию для проверки успешности аутентификации
+    startTime = Date.now();
+    logWithTimestamp('info', 'Fetching session after signup');
+    const { data: session, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      logWithTimestamp('error', 'Error getting session after signup:', sessionError);
+    } else {
+      logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${session?.session ? 'Available' : 'Not available'}`);
+    }
+    
+    logWithTimestamp('info', 'Signup process completed successfully');
     return authData;
   } catch (error) {
-    console.error("SignUp error:", error);
+    logWithTimestamp('error', "SignUp process failed with exception:", error);
     throw error;
   }
 }
 
 // Функция для входа пользователя
 export async function signIn({ email, password }: SignInCredentials) {
+  let startTime = Date.now();
+  logWithTimestamp('info', `Starting signin process for email: ${email}`);
+  
   try {
-    console.log('Attempting to sign in user:', { email });
+    // Проверяем подключение к Supabase перед выполнением входа
+    try {
+      const { data: pingData, error: pingError } = await supabase.from('ping').select('*').limit(1);
+      if (pingError) {
+        logWithTimestamp('warn', 'Supabase connection test failed, but continuing with signin', pingError);
+      } else {
+        logWithTimestamp('info', 'Supabase connection test successful');
+      }
+    } catch (pingError) {
+      logWithTimestamp('warn', 'Supabase ping test failed with exception, but continuing', pingError);
+    }
     
+    // Вход пользователя
+    logWithTimestamp('info', 'Calling supabase.auth.signInWithPassword');
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+    logWithTimestamp('info', `Auth signIn completed in ${Date.now() - startTime}ms with status: ${data ? 'success' : 'error'}`);
+
     if (error) {
-      console.error('Auth error during signin:', error);
+      logWithTimestamp('error', 'Auth error during signin:', error);
       
       // Проверяем, является ли ошибка ограничением запросов (429)
       if (error.status === 429) {
@@ -127,7 +187,7 @@ export async function signIn({ email, password }: SignInCredentials) {
       
       // Проверяем, является ли ошибка неверными учетными данными
       if (error.message?.includes('Invalid login credentials')) {
-        throw new Error('Неверный email или пароль');
+        throw new Error('Неверный email или пароль. Пожалуйста, проверьте введенные данные и попробуйте снова.');
       }
       
       // Если ошибка связана с задержкой сети
@@ -138,29 +198,66 @@ export async function signIn({ email, password }: SignInCredentials) {
       throw error;
     }
     
-    console.log('Signin successful, data:', data ? 'Available' : 'Not available');
+    logWithTimestamp('info', 'Signin data:', data);
+    
+    // Проверяем и обновляем сессию
+    startTime = Date.now();
+    logWithTimestamp('info', 'Fetching session after signin');
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      logWithTimestamp('error', 'Error getting session after signin:', sessionError);
+    } else {
+      logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${sessionData?.session ? 'Available' : 'Not available'}`);
+    }
     
     // Добавляем искусственную задержку для улучшения UX
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    logWithTimestamp('info', 'Adding artificial delay for UX improvement');
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    logWithTimestamp('info', 'Signin process completed successfully');
     return data;
   } catch (error) {
-    console.error("SignIn error:", error);
+    logWithTimestamp('error', "SignIn process failed with exception:", error);
     throw error;
   }
 }
 
 // Функция для выхода пользователя
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  logWithTimestamp('info', 'Starting signout process');
+  
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      logWithTimestamp('error', 'Error during signout:', error);
+      throw error;
+    }
+    logWithTimestamp('info', 'Signout completed successfully');
+  } catch (error) {
+    logWithTimestamp('error', 'Exception during signout:', error);
+    throw error;
+  }
 }
 
 // Функция для получения текущего пользователя
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  logWithTimestamp('info', 'Getting current user');
+  
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    if (!session?.user) return null;
+    if (sessionError) {
+      logWithTimestamp('error', 'Error getting session:', sessionError);
+      return null;
+    }
+    
+    if (!session?.user) {
+      logWithTimestamp('info', 'No active session found');
+      return null;
+    }
+    
+    logWithTimestamp('info', 'Session found, user ID:', session.user.id);
     
     // Получаем дополнительную информацию о пользователе из таблицы users
     const { data, error } = await supabase
@@ -170,8 +267,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       .single();
     
     if (error) {
+      logWithTimestamp('error', 'Error fetching user profile:', error);
+      
       // Если пользователь не найден в таблице users, создаем его
       if (error.code === 'PGRST116') {
+        logWithTimestamp('info', 'User not found in database, creating new profile');
+        
         const userData = session.user.user_metadata || {};
         const username = userData.username || session.user.email?.split('@')[0] || 'user';
         
@@ -187,9 +288,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
           .single();
         
         if (insertError) {
-          console.error("Error creating user profile:", insertError);
+          logWithTimestamp('error', 'Error creating user profile:', insertError);
           return null;
         }
+        
+        logWithTimestamp('info', 'New user profile created:', newUser);
         
         return {
           id: session.user.id,
@@ -199,9 +302,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
         };
       }
       
-      console.error("Error fetching user profile:", error);
       return null;
     }
+    
+    logWithTimestamp('info', 'User profile retrieved successfully');
     
     return {
       id: session.user.id,
@@ -210,7 +314,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       avatar_url: data.avatar_url
     };
   } catch (error) {
-    console.error("GetCurrentUser error:", error);
+    logWithTimestamp('error', 'Exception in getCurrentUser:', error);
     return null;
   }
 }

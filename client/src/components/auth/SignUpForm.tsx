@@ -17,7 +17,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const signUpSchema = z.object({
   username: z.string().min(3, 'Имя пользователя должно содержать минимум 3 символа'),
@@ -36,6 +37,8 @@ export function SignUpForm() {
   const { toast } = useToast();
   const [cooldown, setCooldown] = useState(0);
   const [cooldownActive, setCooldownActive] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [registrationStarted, setRegistrationStarted] = useState(false);
 
   // Обработка таймера ожидания
   useEffect(() => {
@@ -72,15 +75,22 @@ export function SignUpForm() {
       return;
     }
 
+    setErrorMessage(null);
+    setRegistrationStarted(true);
+
     try {
+      console.log("Starting registration process...");
       await signUp(values.email, values.password, values.username);
+      
       form.reset();
       toast({
         title: "Регистрация успешна",
         description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
       });
+      setRegistrationStarted(false);
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Registration error caught in form:', error);
+      setRegistrationStarted(false);
       
       // Определяем понятное сообщение об ошибке
       let errorMessage = "Произошла ошибка при регистрации";
@@ -92,6 +102,8 @@ export function SignUpForm() {
       } else if (error.details) {
         errorMessage = error.details;
       }
+      
+      setErrorMessage(errorMessage);
       
       // Если ошибка связана с ограничением запросов
       if (error.message?.includes('Слишком много запросов') || error.status === 429) {
@@ -115,6 +127,12 @@ export function SignUpForm() {
     }
   };
 
+  // Состояние кнопки
+  const isButtonDisabled = isAuthenticating || cooldownActive || registrationStarted;
+  const buttonText = registrationStarted ? "Регистрация..." : 
+                    isAuthenticating ? "Обработка..." : 
+                    "Зарегистрироваться";
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -132,6 +150,16 @@ export function SignUpForm() {
         )}
       </CardHeader>
       <CardContent>
+        {errorMessage && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Ошибка</AlertTitle>
+            <AlertDescription>
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -141,7 +169,7 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Имя пользователя</FormLabel>
                   <FormControl>
-                    <Input placeholder="username" {...field} />
+                    <Input placeholder="username" {...field} disabled={isButtonDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -154,7 +182,7 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="example@mail.com" {...field} />
+                    <Input type="email" placeholder="example@mail.com" {...field} disabled={isButtonDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,7 +195,7 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Пароль</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="******" {...field} />
+                    <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -180,19 +208,19 @@ export function SignUpForm() {
                 <FormItem>
                   <FormLabel>Подтверждение пароля</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="******" {...field} />
+                    <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isAuthenticating || cooldownActive}>
-              {isAuthenticating ? (
+            <Button type="submit" className="w-full" disabled={isButtonDisabled}>
+              {isButtonDisabled ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Регистрация...
+                  {buttonText}
                 </>
-              ) : 'Зарегистрироваться'}
+              ) : buttonText}
             </Button>
           </form>
         </Form>
