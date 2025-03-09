@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await authSignUp({ email, password, username });
       
       // Проверяем, нужно ли подтверждение email
-      const emailConfirmationRequired = result?.emailConfirmationRequired || !result?.session;
+      const emailConfirmationRequired = (result as any).emailConfirmationRequired || !result?.session;
       
       if (emailConfirmationRequired) {
         toast({

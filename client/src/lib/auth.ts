@@ -62,7 +62,7 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     // Проверяем подключение к Supabase перед выполнением регистрации
     try {
       const { data: pingData, error: pingError } = await withTimeout(
-        supabase.from('ping').select('*').limit(1),
+        supabase.from('ping').select('*').limit(1) as unknown as Promise<any>,
         5000,
         'проверка соединения'
       );
@@ -141,7 +141,7 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
             avatar_url: null,
           })
           .select()
-          .single(),
+          .single() as unknown as Promise<any>,
         10000,
         'создания профиля'
       );
@@ -192,7 +192,7 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     // Явно указываем, что требуется подтверждение email, если сессия не создана
     if (!session?.session) {
       logWithTimestamp('info', 'Email confirmation required');
-      authData.emailConfirmationRequired = true;
+      (authData as any).emailConfirmationRequired = true;
     }
     
     return authData;
@@ -211,7 +211,7 @@ export async function signIn({ email, password }: SignInCredentials) {
     // Проверяем подключение к Supabase перед выполнением входа
     try {
       const { data: pingData, error: pingError } = await withTimeout(
-        supabase.from('ping').select('*').limit(1),
+        supabase.from('ping').select('*').limit(1) as unknown as Promise<any>,
         5000,
         'проверка соединения'
       );
