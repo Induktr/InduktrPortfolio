@@ -60,6 +60,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Проверяем, нужно ли подтверждение email
       const emailConfirmationRequired = (result as any).emailConfirmationRequired || !result?.session;
       
+      // Добавляем подробное логирование
+      console.log('SignUp result:', {
+        success: true,
+        user: result.user ? 'present' : 'null',
+        session: result.session ? 'present' : 'null',
+        emailConfirmationRequired
+      });
+      
       if (emailConfirmationRequired) {
         toast({
           title: 'Регистрация успешна',
@@ -120,11 +128,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignIn = async (email: string, password: string) => {
     setIsAuthenticating(true);
     try {
-      await authSignIn({ email, password });
+      const result = await authSignIn({ email, password });
+      
+      // Добавляем подробное логирование
+      console.log('SignIn result:', {
+        success: true,
+        user: result.user ? 'present' : 'null',
+        session: result.session ? 'present' : 'null'
+      });
+      
       toast({
         title: 'Вход выполнен успешно',
         description: 'Добро пожаловать!',
       });
+      
+      return result;
     } catch (error: any) {
       console.error('SignIn error:', error);
       
@@ -149,11 +167,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = "Неверный email или пароль";
       }
       
-      // Если email не подтвержден
-      if (error.message?.includes('Email not confirmed') || 
-          error.message?.includes('email is not confirmed') ||
-          error.message?.includes('не подтвержден') ||
-          (error.status === 400 && error.message?.includes('email'))) {
+      // Если email не подтвержден - расширяем обнаружение этого состояния
+      if (error.message?.toLowerCase().includes('email not confirmed') || 
+          error.message?.toLowerCase().includes('email is not confirmed') ||
+          error.message?.toLowerCase().includes('не подтвержден') ||
+          error.message?.toLowerCase().includes('подтверждения') ||
+          error.message?.toLowerCase().includes('verification') ||
+          error.status === 422 ||
+          (error.status === 400 && error.message?.toLowerCase().includes('email')) ||
+          (error.status === 401 && error.message?.toLowerCase().includes('email'))) {
         errorMessage = `Email ${email} не подтвержден. Пожалуйста, проверьте почту и перейдите по ссылке для активации.`;
       }
       
@@ -238,11 +260,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleResendConfirmationEmail = async (email: string) => {
     setIsAuthenticating(true);
     try {
-      await resendEmail(email);
+      console.log(`Attempting to resend confirmation email to: ${email}`);
+      const result = await resendEmail(email);
+      console.log('Confirmation email resent result:', result);
+      
       toast({
         title: 'Письмо отправлено',
         description: 'Письмо с подтверждением было отправлено повторно. Пожалуйста, проверьте вашу почту.',
       });
+      
+      return result;
     } catch (error: any) {
       console.error('ResendConfirmationEmail error:', error);
       

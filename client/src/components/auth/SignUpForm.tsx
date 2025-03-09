@@ -111,25 +111,21 @@ export function SignUpForm() {
       console.log("Starting registration process...");
       const result = await signUp(values.email, values.password, values.username);
       
-      // Проверяем, требуется ли подтверждение email
-      const emailConfirmationRequired = result?.emailConfirmationRequired || !result?.session;
+      // Явно логируем результат для отладки
+      console.log("Registration result:", result);
+      console.log("Email confirmation required:", !result?.session);
       
+      // Принудительно устанавливаем флаг успешной регистрации и необходимости подтверждения
       form.reset();
       setRegistrationSuccess(true);
       setRegisteredEmail(values.email);
       
-      // Показываем сообщение о необходимости подтверждения email
-      if (emailConfirmationRequired) {
-        toast({
-          title: "Регистрация успешна",
-          description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
-        });
-      } else {
-        toast({
-          title: "Регистрация успешна",
-          description: "Вы успешно зарегистрированы и можете начать использовать приложение.",
-        });
-      }
+      // Всегда показываем сообщение о подтверждении email для Supabase
+      // так как Supabase по умолчанию требует подтверждения email
+      toast({
+        title: "Регистрация успешна",
+        description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
+      });
       
       setRegistrationStarted(false);
     } catch (error: any) {
@@ -232,11 +228,13 @@ export function SignUpForm() {
         {registrationSuccess && (
           <Alert className="mb-4 bg-green-500/10 border-green-500/50">
             <CheckCircle className="h-4 w-4 text-green-500" />
-            <AlertTitle>Регистрация успешна!</AlertTitle>
-            <AlertDescription>
-              <p>Мы отправили письмо с подтверждением на <strong>{registeredEmail}</strong></p>
-              <p className="mt-2">Пожалуйста, проверьте вашу электронную почту (включая папку "Спам") и перейдите по ссылке для активации аккаунта.</p>
-              <p className="mt-2">После подтверждения email вы сможете войти в систему.</p>
+            <AlertTitle className="text-lg font-bold">Подтвердите ваш email!</AlertTitle>
+            <AlertDescription className="mt-2">
+              <p className="mb-2">Мы отправили письмо с подтверждением на <strong>{registeredEmail}</strong></p>
+              <p className="mb-2">
+                <strong>Важно:</strong> Вы не сможете войти в систему, пока не подтвердите ваш email.
+              </p>
+              <p>Пожалуйста, проверьте все папки вашей почты (включая "Спам" и "Промоакции") и перейдите по ссылке для активации аккаунта.</p>
             </AlertDescription>
           </Alert>
         )}

@@ -19,8 +19,8 @@ export type SignInCredentials = {
 };
 
 // Константы таймаутов
-const AUTH_OPERATION_TIMEOUT = 15000; // 15 секунд максимум на операцию авторизации
-const ARTIFICIAL_DELAY = 800; // минимальная задержка для UX
+const AUTH_OPERATION_TIMEOUT = 20000; // Увеличиваем до 20 секунд
+const ARTIFICIAL_DELAY = 500; // Уменьшаем до 500 мс
 
 // Вспомогательная функция для логирования с временной меткой
 function logWithTimestamp(type: 'info' | 'error' | 'warn', message: string, data?: any) {
@@ -82,7 +82,8 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       email,
       password,
       options: {
-        data: { username }  // Передаем username сразу при создании
+        data: { username },  // Передаем username сразу при создании
+        emailRedirectTo: window.location.origin + '/signin' // Добавляем URL для редиректа после подтверждения
       }
     });
     
@@ -191,9 +192,18 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     
     // Явно указываем, что требуется подтверждение email, если сессия не создана
     if (!session?.session) {
-      logWithTimestamp('info', 'Email confirmation required');
+      logWithTimestamp('info', 'Email confirmation required, setting flag to true');
       (authData as any).emailConfirmationRequired = true;
+    } else {
+      logWithTimestamp('info', 'Email confirmation not required, session available');
     }
+    
+    // Дополнительный лог для диагностики
+    logWithTimestamp('info', 'Final auth data to be returned:', { 
+      user: authData.user ? 'present' : 'null',
+      session: authData.session ? 'present' : 'null',
+      emailConfirmationRequired: (authData as any).emailConfirmationRequired 
+    });
     
     return authData;
   } catch (error) {
@@ -241,6 +251,15 @@ export async function signIn({ email, password }: SignInCredentials) {
     if (error) {
       logWithTimestamp('error', 'Auth error during signin:', error);
       
+      // Расширяем проверку на неподтвержденный email
+      if (error.message?.toLowerCase().includes('email not confirmed') || 
+          error.message?.toLowerCase().includes('not verified') ||
+          error.message?.toLowerCase().includes('подтвержден') ||
+          error.status === 422 || 
+          (error.status === 400 && error.message?.toLowerCase().includes('email'))) {
+        throw new Error(`Email ${email} не подтвержден. Перейдите по ссылке в письме для активации аккаунта.`);
+      }
+      
       // Проверяем, является ли ошибка ограничением запросов (429)
       if (error.status === 429) {
         const waitTimeMatch = error.message.match(/after (\d+) seconds/);
@@ -252,13 +271,6 @@ export async function signIn({ email, password }: SignInCredentials) {
       // Проверяем, является ли ошибка неверными учетными данными
       if (error.message?.includes('Invalid login credentials')) {
         throw new Error('Неверный email или пароль. Пожалуйста, проверьте введенные данные и попробуйте снова.');
-      }
-      
-      // Проверяем, не связана ли ошибка с неподтвержденным email
-      if (error.message?.includes('Email not confirmed') || 
-          error.message?.includes('email is not confirmed') ||
-          (error.status === 400 && error.message?.includes('email'))) {
-        throw new Error(`Email ${email} не подтвержден. Пожалуйста, проверьте почту и перейдите по ссылке для активации.`);
       }
       
       // Если ошибка связана с задержкой сети

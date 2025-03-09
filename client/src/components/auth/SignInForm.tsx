@@ -113,6 +113,14 @@ export function SignInForm() {
       console.error('Login error caught in form:', error);
       setLoginStarted(false);
       
+      // Логируем детали ошибки для диагностики
+      console.log("Login error details:", {
+        message: error.message,
+        status: error.status,
+        error_description: error.error_description,
+        details: error.details
+      });
+      
       // Определяем понятное сообщение об ошибке
       let errorMessage = "Произошла ошибка при входе";
       
@@ -126,11 +134,15 @@ export function SignInForm() {
       
       setErrorMessage(errorMessage);
       
-      // Проверка на неподтвержденный email
-      if (error.message?.includes('Email not confirmed') || 
-          error.message?.includes('email is not confirmed') ||
-          error.message?.includes('не подтвержден') ||
-          (error.status === 400 && error.message?.includes('email'))) {
+      // Проверка на неподтвержденный email - расширяем условия проверки
+      if (error.message?.toLowerCase().includes('email not confirmed') || 
+          error.message?.toLowerCase().includes('email is not confirmed') ||
+          error.message?.toLowerCase().includes('не подтвержден') ||
+          error.message?.toLowerCase().includes('подтверждения') ||
+          error.message?.toLowerCase().includes('verification') ||
+          (error.status === 400 && error.message?.toLowerCase().includes('email')) ||
+          (error.status === 401 && error.message?.toLowerCase().includes('email')) ||
+          (error.status === 422 && error.message?.toLowerCase().includes('email'))) {
         setIsEmailUnconfirmed(true);
         setUnconfirmedEmail(values.email);
         errorMessage = "Ваш email не подтвержден. Пожалуйста, проверьте почту и перейдите по ссылке подтверждения.";
@@ -231,10 +243,11 @@ export function SignInForm() {
         {isEmailUnconfirmed && (
           <Alert className="mb-4 bg-blue-500/10 border-blue-500/50">
             <Mail className="h-4 w-4 text-blue-500" />
-            <AlertTitle>Требуется подтверждение email</AlertTitle>
+            <AlertTitle className="text-lg font-bold">Требуется подтверждение email</AlertTitle>
             <AlertDescription>
-              <p>Email-адрес <strong>{unconfirmedEmail}</strong> не подтвержден.</p>
-              <p className="mt-2">Мы отправили письмо с инструкциями по подтверждению на указанный адрес. Пожалуйста, проверьте вашу почту (включая папку "Спам") и перейдите по ссылке для активации.</p>
+              <p className="mb-2">Email-адрес <strong>{unconfirmedEmail}</strong> не подтвержден.</p>
+              <p className="mb-2"><strong>Важно:</strong> Вы не сможете войти в систему, пока не подтвердите ваш email.</p>
+              <p className="mb-2">Проверьте все папки вашей почты (включая "Спам" и "Промоакции") и перейдите по ссылке для активации.</p>
               <Button 
                 variant="outline" 
                 size="sm" 
