@@ -41,8 +41,10 @@ export function SignUpForm() {
   const [registrationStarted, setRegistrationStarted] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string>('');
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [showSlowConnectionMessage, setShowSlowConnectionMessage] = useState(false);
 
-  // Обработка таймера ожидания
+  // Обработка таймера ожидания для блокировки повторных запросов
   useEffect(() => {
     if (cooldown <= 0) {
       setCooldownActive(false);
@@ -55,6 +57,28 @@ export function SignUpForm() {
 
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  // Считаем время, прошедшее с начала регистрации для отображения дополнительных сообщений
+  useEffect(() => {
+    if (!registrationStarted) {
+      setTimeElapsed(0);
+      setShowSlowConnectionMessage(false);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeElapsed(prev => {
+        const newValue = prev + 1;
+        // Если прошло более 5 секунд и регистрация все еще идет, показываем сообщение о медленном соединении
+        if (newValue >= 5 && !showSlowConnectionMessage) {
+          setShowSlowConnectionMessage(true);
+        }
+        return newValue;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [registrationStarted, showSlowConnectionMessage]);
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -80,18 +104,33 @@ export function SignUpForm() {
     setErrorMessage(null);
     setRegistrationStarted(true);
     setRegistrationSuccess(false);
+    setShowSlowConnectionMessage(false);
+    setTimeElapsed(0);
 
     try {
       console.log("Starting registration process...");
-      await signUp(values.email, values.password, values.username);
+      const result = await signUp(values.email, values.password, values.username);
+      
+      // Проверяем, требуется ли подтверждение email
+      const emailConfirmationRequired = result?.emailConfirmationRequired || !result?.session;
       
       form.reset();
       setRegistrationSuccess(true);
       setRegisteredEmail(values.email);
-      toast({
-        title: "Регистрация успешна",
-        description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
-      });
+      
+      // Показываем сообщение о необходимости подтверждения email
+      if (emailConfirmationRequired) {
+        toast({
+          title: "Регистрация успешна",
+          description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
+        });
+      } else {
+        toast({
+          title: "Регистрация успешна",
+          description: "Вы успешно зарегистрированы и можете начать использовать приложение.",
+        });
+      }
+      
       setRegistrationStarted(false);
     } catch (error: any) {
       console.error('Registration error caught in form:', error);
@@ -124,6 +163,11 @@ export function SignUpForm() {
         errorMessage = "Этот email уже зарегистрирован. Пожалуйста, используйте другой email или войдите в систему.";
       }
       
+      // Если таймаут операции
+      if (error.message?.includes('Превышено время ожидания')) {
+        errorMessage = "Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.";
+      }
+      
       toast({
         title: "Ошибка регистрации",
         description: errorMessage,
@@ -134,9 +178,11 @@ export function SignUpForm() {
 
   // Состояние кнопки
   const isButtonDisabled = isAuthenticating || cooldownActive || registrationStarted;
-  const buttonText = registrationStarted ? "Регистрация..." : 
-                    isAuthenticating ? "Обработка..." : 
-                    "Зарегистрироваться";
+  const buttonText = registrationStarted ? 
+                     (timeElapsed > 10 ? "Пытаемся зарегистрировать..." : 
+                      timeElapsed > 5 ? "Ожидание ответа..." : "Регистрация...") : 
+                     isAuthenticating ? "Обработка..." : 
+                     "Зарегистрироваться";
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -153,8 +199,26 @@ export function SignUpForm() {
             <Progress value={(cooldown / 20) * 100} className="h-2" />
           </div>
         )}
+        {registrationStarted && timeElapsed > 0 && (
+          <div className="mt-2">
+            <p className="text-sm text-muted-foreground mb-1">
+              Время ожидания: {timeElapsed} сек.
+            </p>
+            <Progress value={Math.min(100, (timeElapsed / 15) * 100)} className="h-2" />
+          </div>
+        )}
       </CardHeader>
       <CardContent>
+        {showSlowConnectionMessage && registrationStarted && (
+          <Alert className="mb-4 bg-yellow-500/10 border-yellow-500/50">
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertTitle>Медленное соединение</AlertTitle>
+            <AlertDescription>
+              Регистрация занимает больше времени, чем обычно. Пожалуйста, не закрывайте страницу.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {errorMessage && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />

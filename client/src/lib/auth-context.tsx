@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
-import { AuthUser, getCurrentUser, signIn, signOut, signUp, updateProfile, resendConfirmationEmail as resendEmail } from './auth';
+import { AuthUser, getCurrentUser, signIn as authSignIn, signOut as authSignOut, signUp as authSignUp, updateProfile as authUpdateProfile, resendConfirmationEmail as resendEmail } from './auth';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticating: boolean;
-  signUp: (email: string, password: string, username: string) => Promise<void>;
+  signUp: (email: string, password: string, username: string) => Promise<any>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: { username?: string; avatar_url?: string | null }) => Promise<void>;
@@ -55,11 +55,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignUp = async (email: string, password: string, username: string) => {
     setIsAuthenticating(true);
     try {
-      await signUp({ email, password, username });
-      toast({
-        title: 'Регистрация успешна',
-        description: 'Пожалуйста, проверьте вашу почту для подтверждения аккаунта.',
-      });
+      const result = await authSignUp({ email, password, username });
+      
+      // Проверяем, нужно ли подтверждение email
+      const emailConfirmationRequired = result?.emailConfirmationRequired || !result?.session;
+      
+      if (emailConfirmationRequired) {
+        toast({
+          title: 'Регистрация успешна',
+          description: 'Пожалуйста, проверьте вашу почту для подтверждения аккаунта.',
+        });
+      } else {
+        // Если подтверждение не требуется или уже выполнено
+        toast({
+          title: 'Регистрация успешна',
+          description: 'Вы успешно зарегистрировались в системе.',
+        });
+      }
+      
+      return result;
     } catch (error: any) {
       console.error('SignUp error:', error);
       
@@ -84,6 +98,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = "Этот email уже зарегистрирован. Пожалуйста, используйте другой email или войдите в систему.";
       }
       
+      // Если таймаут операции
+      if (error.message?.includes('Превышено время ожидания')) {
+        errorMessage = "Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.";
+      }
+      
       toast({
         title: 'Ошибка регистрации',
         description: errorMessage,
@@ -91,17 +110,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     } finally {
-      // Добавляем небольшую задержку перед сбросом состояния загрузки
+      // Сбрасываем состояние загрузки
       setTimeout(() => {
         setIsAuthenticating(false);
-      }, 500);
+      }, 200);
     }
   };
 
   const handleSignIn = async (email: string, password: string) => {
     setIsAuthenticating(true);
     try {
-      await signIn({ email, password });
+      await authSignIn({ email, password });
       toast({
         title: 'Вход выполнен успешно',
         description: 'Добро пожаловать!',
@@ -130,6 +149,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = "Неверный email или пароль";
       }
       
+      // Если email не подтвержден
+      if (error.message?.includes('Email not confirmed') || 
+          error.message?.includes('email is not confirmed') ||
+          error.message?.includes('не подтвержден') ||
+          (error.status === 400 && error.message?.includes('email'))) {
+        errorMessage = `Email ${email} не подтвержден. Пожалуйста, проверьте почту и перейдите по ссылке для активации.`;
+      }
+      
+      // Если таймаут операции
+      if (error.message?.includes('Превышено время ожидания')) {
+        errorMessage = "Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.";
+      }
+      
       toast({
         title: 'Ошибка входа',
         description: errorMessage,
@@ -137,17 +169,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     } finally {
-      // Добавляем небольшую задержку перед сбросом состояния загрузки
+      // Сбрасываем состояние загрузки
       setTimeout(() => {
         setIsAuthenticating(false);
-      }, 500);
+      }, 200);
     }
   };
 
   const handleSignOut = async () => {
     setIsLoading(true);
     try {
-      await signOut();
+      await authSignOut();
       setUser(null);
       toast({
         title: 'Выход выполнен',
@@ -169,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     setIsLoading(true);
     try {
-      const updatedUser = await updateProfile(user.id, updates);
+      const updatedUser = await authUpdateProfile(user.id, updates);
       setUser({
         ...user,
         username: updatedUser.username,
@@ -225,6 +257,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         errorMessage = error.details;
       }
       
+      // Если таймаут операции
+      if (error.message?.includes('Превышено время ожидания')) {
+        errorMessage = "Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.";
+      }
+      
       toast({
         title: 'Ошибка отправки письма',
         description: errorMessage,
@@ -232,10 +269,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     } finally {
-      // Добавляем небольшую задержку перед сбросом состояния загрузки
+      // Сбрасываем состояние загрузки
       setTimeout(() => {
         setIsAuthenticating(false);
-      }, 500);
+      }, 200);
     }
   };
 

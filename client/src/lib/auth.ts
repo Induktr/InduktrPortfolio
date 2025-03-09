@@ -18,6 +18,10 @@ export type SignInCredentials = {
   password: string;
 };
 
+// Константы таймаутов
+const AUTH_OPERATION_TIMEOUT = 15000; // 15 секунд максимум на операцию авторизации
+const ARTIFICIAL_DELAY = 800; // минимальная задержка для UX
+
 // Вспомогательная функция для логирования с временной меткой
 function logWithTimestamp(type: 'info' | 'error' | 'warn', message: string, data?: any) {
   const timestamp = new Date().toISOString();
@@ -30,6 +34,25 @@ function logWithTimestamp(type: 'info' | 'error' | 'warn', message: string, data
   }
 }
 
+// Вспомогательная функция для добавления таймаута к промису
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Превышено время ожидания (${timeoutMs / 1000}с) при выполнении операции ${operation}`));
+    }, timeoutMs);
+
+    promise
+      .then(result => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch(error => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
+
 // Функция для регистрации нового пользователя
 export async function signUp({ email, password, username }: SignUpCredentials) {
   let startTime = Date.now();
@@ -38,7 +61,12 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
   try {
     // Проверяем подключение к Supabase перед выполнением регистрации
     try {
-      const { data: pingData, error: pingError } = await supabase.from('ping').select('*').limit(1);
+      const { data: pingData, error: pingError } = await withTimeout(
+        supabase.from('ping').select('*').limit(1),
+        5000,
+        'проверка соединения'
+      );
+      
       if (pingError) {
         logWithTimestamp('warn', 'Supabase connection test failed, but continuing with signup', pingError);
       } else {
@@ -48,15 +76,22 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       logWithTimestamp('warn', 'Supabase ping test failed with exception, but continuing', pingError);
     }
     
-    // Регистрация пользователя через Supabase Auth - без опций метаданных
+    // Регистрация пользователя через Supabase Auth с таймаутом
     logWithTimestamp('info', 'Calling supabase.auth.signUp');
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const authPromise = supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username }  // Теперь передаем username сразу при создании
+        data: { username }  // Передаем username сразу при создании
       }
     });
+    
+    // Добавляем таймаут
+    const { data: authData, error: authError } = await withTimeout(
+      authPromise,
+      AUTH_OPERATION_TIMEOUT,
+      'регистрации'
+    );
 
     logWithTimestamp('info', `Auth signUp completed in ${Date.now() - startTime}ms with status: ${authData ? 'success' : 'error'}`);
 
@@ -96,16 +131,20 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     try {
       logWithTimestamp('info', 'Creating user profile in users table');
       
-      const { data: profileData, error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          username,
-          email,
-          avatar_url: null,
-        })
-        .select()
-        .single();
+      const { data: profileData, error: profileError } = await withTimeout(
+        supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            username,
+            email,
+            avatar_url: null,
+          })
+          .select()
+          .single(),
+        10000,
+        'создания профиля'
+      );
 
       if (profileError) {
         logWithTimestamp('error', "Error creating user profile:", profileError);
@@ -124,14 +163,23 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       // Продолжаем выполнение, так как аутентификация прошла успешно
     }
 
-    // Добавляем искусственную задержку для улучшения UX
-    logWithTimestamp('info', 'Adding artificial delay for UX improvement');
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Делаем искусственную задержку (минимальную), чтобы улучшить UX
+    const elapsedTime = Date.now() - startTime;
+    const delayTime = Math.max(0, ARTIFICIAL_DELAY - elapsedTime);
+    
+    if (delayTime > 0) {
+      logWithTimestamp('info', `Adding artificial delay of ${delayTime}ms for UX improvement`);
+      await new Promise(resolve => setTimeout(resolve, delayTime));
+    }
     
     // Получаем текущую сессию для проверки успешности аутентификации
     startTime = Date.now();
     logWithTimestamp('info', 'Fetching session after signup');
-    const { data: session, error: sessionError } = await supabase.auth.getSession();
+    const { data: session, error: sessionError } = await withTimeout(
+      supabase.auth.getSession(),
+      5000,
+      'получения сессии'
+    );
     
     if (sessionError) {
       logWithTimestamp('error', 'Error getting session after signup:', sessionError);
@@ -140,6 +188,13 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     }
     
     logWithTimestamp('info', 'Signup process completed successfully');
+    
+    // Явно указываем, что требуется подтверждение email, если сессия не создана
+    if (!session?.session) {
+      logWithTimestamp('info', 'Email confirmation required');
+      authData.emailConfirmationRequired = true;
+    }
+    
     return authData;
   } catch (error) {
     logWithTimestamp('error', "SignUp process failed with exception:", error);
@@ -155,7 +210,12 @@ export async function signIn({ email, password }: SignInCredentials) {
   try {
     // Проверяем подключение к Supabase перед выполнением входа
     try {
-      const { data: pingData, error: pingError } = await supabase.from('ping').select('*').limit(1);
+      const { data: pingData, error: pingError } = await withTimeout(
+        supabase.from('ping').select('*').limit(1),
+        5000,
+        'проверка соединения'
+      );
+      
       if (pingError) {
         logWithTimestamp('warn', 'Supabase connection test failed, but continuing with signin', pingError);
       } else {
@@ -165,12 +225,16 @@ export async function signIn({ email, password }: SignInCredentials) {
       logWithTimestamp('warn', 'Supabase ping test failed with exception, but continuing', pingError);
     }
     
-    // Вход пользователя
+    // Вход пользователя с таймаутом
     logWithTimestamp('info', 'Calling supabase.auth.signInWithPassword');
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await withTimeout(
+      supabase.auth.signInWithPassword({
+        email,
+        password,
+      }),
+      AUTH_OPERATION_TIMEOUT,
+      'входа в систему'
+    );
 
     logWithTimestamp('info', `Auth signIn completed in ${Date.now() - startTime}ms with status: ${data ? 'success' : 'error'}`);
 
@@ -190,6 +254,13 @@ export async function signIn({ email, password }: SignInCredentials) {
         throw new Error('Неверный email или пароль. Пожалуйста, проверьте введенные данные и попробуйте снова.');
       }
       
+      // Проверяем, не связана ли ошибка с неподтвержденным email
+      if (error.message?.includes('Email not confirmed') || 
+          error.message?.includes('email is not confirmed') ||
+          (error.status === 400 && error.message?.includes('email'))) {
+        throw new Error(`Email ${email} не подтвержден. Пожалуйста, проверьте почту и перейдите по ссылке для активации.`);
+      }
+      
       // Если ошибка связана с задержкой сети
       if (error.message?.includes('NetworkError') || error.message?.includes('network') || error.message?.includes('timeout')) {
         throw new Error(`Проблема с сетью. Пожалуйста, проверьте подключение и попробуйте снова.`);
@@ -203,7 +274,11 @@ export async function signIn({ email, password }: SignInCredentials) {
     // Проверяем и обновляем сессию
     startTime = Date.now();
     logWithTimestamp('info', 'Fetching session after signin');
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await withTimeout(
+      supabase.auth.getSession(),
+      5000,
+      'получения сессии'
+    );
     
     if (sessionError) {
       logWithTimestamp('error', 'Error getting session after signin:', sessionError);
@@ -211,9 +286,14 @@ export async function signIn({ email, password }: SignInCredentials) {
       logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${sessionData?.session ? 'Available' : 'Not available'}`);
     }
     
-    // Добавляем искусственную задержку для улучшения UX
-    logWithTimestamp('info', 'Adding artificial delay for UX improvement');
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Делаем искусственную задержку (минимальную), чтобы улучшить UX
+    const elapsedTime = Date.now() - startTime;
+    const delayTime = Math.max(0, ARTIFICIAL_DELAY - elapsedTime);
+    
+    if (delayTime > 0) {
+      logWithTimestamp('info', `Adding artificial delay of ${delayTime}ms for UX improvement`);
+      await new Promise(resolve => setTimeout(resolve, delayTime));
+    }
     
     logWithTimestamp('info', 'Signin process completed successfully');
     return data;
