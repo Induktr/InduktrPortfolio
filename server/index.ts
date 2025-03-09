@@ -12,11 +12,17 @@ const app = express();
 
 // Настройка CORS
 app.use(cors({
-  origin: "*", // В продакшене лучше указать конкретные домены
+  origin: true, // Разрешить запросы с любого домена
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "X-Client-Info", "apikey", "Access-Control-Allow-Origin"]
 }));
+
+// Добавляем middleware для отладки запросов
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} [${req.method}] ${req.url}`);
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

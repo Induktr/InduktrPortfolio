@@ -23,34 +23,46 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    flowType: 'implicit', // Используем implicit flow для более простой авторизации
   },
   global: {
     headers: {
       'Content-Type': 'application/json',
+      'X-Client-Info': 'inDuktr Portfolio App'
     },
-    fetch: (url, options) => {
-      // Устанавливаем таймаут для fetch запросов в 10 секунд
+    fetch: (url, options = {}) => {
+      // Устанавливаем таймаут для fetch запросов в 30 секунд (увеличиваем с 10)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const fetchOptions = {
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      console.log('Supabase fetch request to:', url);
+      
+      // Использование стандартного fetch с таймаутом
+      return fetch(url, {
         ...options,
         signal: controller.signal,
-      };
-
-      return fetch(url, fetchOptions)
+        credentials: 'same-origin',
+      })
         .then(response => {
           clearTimeout(timeoutId);
+          console.log('Supabase response status:', response.status);
           return response;
         })
         .catch(error => {
           clearTimeout(timeoutId);
-          console.error('Supabase fetch error:', error);
+          console.error('Supabase fetch error:', error.name, error.message);
           if (error.name === 'AbortError') {
             throw new Error('Запрос был прерван из-за таймаута. Пожалуйста, попробуйте снова.');
           }
           throw error;
         });
     }
+  },
+  realtime: {
+    timeout: 30000,
+  },
+  db: {
+    schema: 'public',
   }
 });
 
