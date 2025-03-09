@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const signUpSchema = z.object({
@@ -39,6 +39,8 @@ export function SignUpForm() {
   const [cooldownActive, setCooldownActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [registrationStarted, setRegistrationStarted] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string>('');
 
   // Обработка таймера ожидания
   useEffect(() => {
@@ -77,12 +79,15 @@ export function SignUpForm() {
 
     setErrorMessage(null);
     setRegistrationStarted(true);
+    setRegistrationSuccess(false);
 
     try {
       console.log("Starting registration process...");
       await signUp(values.email, values.password, values.username);
       
       form.reset();
+      setRegistrationSuccess(true);
+      setRegisteredEmail(values.email);
       toast({
         title: "Регистрация успешна",
         description: "Пожалуйста, проверьте вашу почту для подтверждения аккаунта.",
@@ -160,70 +165,84 @@ export function SignUpForm() {
           </Alert>
         )}
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Имя пользователя</FormLabel>
-                  <FormControl>
-                    <Input placeholder="username" {...field} disabled={isButtonDisabled} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="example@mail.com" {...field} disabled={isButtonDisabled} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Пароль</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Подтверждение пароля</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isButtonDisabled}>
-              {isButtonDisabled ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {buttonText}
-                </>
-              ) : buttonText}
-            </Button>
-          </form>
-        </Form>
+        {registrationSuccess && (
+          <Alert className="mb-4 bg-green-500/10 border-green-500/50">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <AlertTitle>Регистрация успешна!</AlertTitle>
+            <AlertDescription>
+              <p>Мы отправили письмо с подтверждением на <strong>{registeredEmail}</strong></p>
+              <p className="mt-2">Пожалуйста, проверьте вашу электронную почту (включая папку "Спам") и перейдите по ссылке для активации аккаунта.</p>
+              <p className="mt-2">После подтверждения email вы сможете войти в систему.</p>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {!registrationSuccess && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Имя пользователя</FormLabel>
+                    <FormControl>
+                      <Input placeholder="username" {...field} disabled={isButtonDisabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="example@mail.com" {...field} disabled={isButtonDisabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Пароль</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Подтверждение пароля</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="******" {...field} disabled={isButtonDisabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isButtonDisabled}>
+                {isButtonDisabled ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {buttonText}
+                  </>
+                ) : buttonText}
+              </Button>
+            </form>
+          </Form>
+        )}
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">

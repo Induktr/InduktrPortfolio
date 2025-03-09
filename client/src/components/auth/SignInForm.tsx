@@ -17,7 +17,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const signInSchema = z.object({
@@ -28,12 +28,14 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn, isAuthenticating } = useAuth();
+  const { signIn, isAuthenticating, resendConfirmationEmail } = useAuth();
   const { toast } = useToast();
   const [cooldown, setCooldown] = useState(0);
   const [cooldownActive, setCooldownActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loginStarted, setLoginStarted] = useState(false);
+  const [isEmailUnconfirmed, setIsEmailUnconfirmed] = useState(false);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState('');
 
   // Обработка таймера ожидания
   useEffect(() => {
@@ -70,6 +72,7 @@ export function SignInForm() {
 
     setErrorMessage(null);
     setLoginStarted(true);
+    setIsEmailUnconfirmed(false);
 
     try {
       console.log("Starting login process...");
@@ -97,6 +100,15 @@ export function SignInForm() {
       
       setErrorMessage(errorMessage);
       
+      // Проверка на неподтвержденный email
+      if (error.message?.includes('Email not confirmed') || 
+          error.message?.includes('email is not confirmed') ||
+          (error.status === 400 && error.message?.includes('email'))) {
+        setIsEmailUnconfirmed(true);
+        setUnconfirmedEmail(values.email);
+        errorMessage = "Ваш email не подтвержден. Пожалуйста, проверьте почту и перейдите по ссылке подтверждения.";
+      }
+      
       // Если ошибка связана с ограничением запросов
       if (error.message?.includes('Слишком много запросов') || error.status === 429) {
         const waitTimeMatch = error.message.match(/подождите (\d+) секунд/);
@@ -116,6 +128,18 @@ export function SignInForm() {
         description: errorMessage,
         variant: "destructive",
       });
+    }
+  };
+
+  // Функция для повторной отправки письма подтверждения
+  const handleResendConfirmation = async () => {
+    if (!unconfirmedEmail) return;
+    
+    try {
+      await resendConfirmationEmail(unconfirmedEmail);
+    } catch (error) {
+      // Ошибка уже обрабатывается в контексте
+      console.error('Error resending confirmation email:', error);
     }
   };
 
@@ -142,12 +166,37 @@ export function SignInForm() {
         )}
       </CardHeader>
       <CardContent>
-        {errorMessage && (
+        {errorMessage && !isEmailUnconfirmed && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Ошибка</AlertTitle>
             <AlertDescription>
               {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {isEmailUnconfirmed && (
+          <Alert className="mb-4 bg-blue-500/10 border-blue-500/50">
+            <Mail className="h-4 w-4 text-blue-500" />
+            <AlertTitle>Требуется подтверждение email</AlertTitle>
+            <AlertDescription>
+              <p>Email-адрес <strong>{unconfirmedEmail}</strong> не подтвержден.</p>
+              <p className="mt-2">Мы отправили письмо с инструкциями по подтверждению на указанный адрес. Пожалуйста, проверьте вашу почту (включая папку "Спам") и перейдите по ссылке для активации.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3" 
+                onClick={handleResendConfirmation}
+                disabled={isButtonDisabled}
+              >
+                {isButtonDisabled ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Отправка...
+                  </>
+                ) : 'Отправить письмо повторно'}
+              </Button>
             </AlertDescription>
           </Alert>
         )}

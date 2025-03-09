@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
-import { AuthUser, getCurrentUser, signIn, signOut, signUp, updateProfile } from './auth';
+import { AuthUser, getCurrentUser, signIn, signOut, signUp, updateProfile, resendConfirmationEmail as resendEmail } from './auth';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
@@ -11,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: { username?: string; avatar_url?: string | null }) => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -202,6 +203,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleResendConfirmationEmail = async (email: string) => {
+    setIsAuthenticating(true);
+    try {
+      await resendEmail(email);
+      toast({
+        title: 'Письмо отправлено',
+        description: 'Письмо с подтверждением было отправлено повторно. Пожалуйста, проверьте вашу почту.',
+      });
+    } catch (error: any) {
+      console.error('ResendConfirmationEmail error:', error);
+      
+      // Определяем понятное сообщение об ошибке
+      let errorMessage = "Произошла ошибка при отправке письма";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error_description) {
+        errorMessage = error.error_description;
+      } else if (error.details) {
+        errorMessage = error.details;
+      }
+      
+      toast({
+        title: 'Ошибка отправки письма',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw error;
+    } finally {
+      // Добавляем небольшую задержку перед сбросом состояния загрузки
+      setTimeout(() => {
+        setIsAuthenticating(false);
+      }, 500);
+    }
+  };
+
   const value = {
     user,
     isLoading,
@@ -210,6 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn: handleSignIn,
     signOut: handleSignOut,
     updateProfile: handleUpdateProfile,
+    resendConfirmationEmail: handleResendConfirmationEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

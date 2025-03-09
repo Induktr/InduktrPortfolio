@@ -365,4 +365,27 @@ export async function updateProfile(userId: string, updates: { username?: string
     console.error("UpdateProfile error:", error);
     throw error;
   }
+}
+
+// Функция для повторной отправки письма подтверждения email
+export async function resendConfirmationEmail(email: string) {
+  logWithTimestamp('info', `Resending confirmation email to: ${email}`);
+  
+  try {
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+    
+    if (error) {
+      logWithTimestamp('error', 'Error resending confirmation email:', error);
+      throw error;
+    }
+    
+    logWithTimestamp('info', 'Confirmation email resent successfully');
+    return data;
+  } catch (error) {
+    logWithTimestamp('error', 'Exception resending confirmation email:', error);
+    throw error;
+  }
 } 
