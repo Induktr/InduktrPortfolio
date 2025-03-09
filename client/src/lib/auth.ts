@@ -21,6 +21,8 @@ export type SignInCredentials = {
 // Функция для регистрации нового пользователя
 export async function signUp({ email, password, username }: SignUpCredentials) {
   try {
+    console.log('Attempting to sign up user:', { email, username });
+    
     // Регистрация пользователя через Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -33,6 +35,8 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     });
 
     if (authError) {
+      console.error('Auth error during signup:', authError);
+      
       // Проверяем, является ли ошибка ограничением запросов (429)
       if (authError.status === 429) {
         const waitTimeMatch = authError.message.match(/after (\d+) seconds/);
@@ -41,33 +45,58 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
         throw new Error(`Слишком много запросов. Пожалуйста, подождите ${waitTime} секунд перед повторной попыткой.`);
       }
       
+      // Если ошибка связана с задержкой сети
+      if (authError.message?.includes('NetworkError') || authError.message?.includes('network') || authError.message?.includes('timeout')) {
+        throw new Error(`Проблема с сетью. Пожалуйста, проверьте подключение и попробуйте снова.`);
+      }
+      
       throw authError;
     }
 
-    if (authData.user) {
-      // Создание записи в таблице users с дополнительной информацией
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          username,
-          email,
-          avatar_url: null,
-        });
+    console.log('Auth data after signup:', authData);
 
-      if (profileError) {
-        console.error("Error creating user profile:", profileError);
-        // Не удаляем пользователя из Auth, так как у нас нет прав администратора
-        throw profileError;
+    if (!authData.user) {
+      console.error('No user data returned from signup');
+      throw new Error('Ошибка регистрации: не удалось создать пользователя');
+    }
+
+    if (authData.user) {
+      try {
+        // Создание записи в таблице users с дополнительной информацией
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            username,
+            email,
+            avatar_url: null,
+          });
+  
+        if (profileError) {
+          console.error("Error creating user profile:", profileError);
+          // Не удаляем пользователя из Auth, так как у нас нет прав администратора
+          
+          // Если это ошибка дублирования записи, возможно пользователь уже существует
+          if (profileError.code === '23505') { // PostgreSQL уникальный индекс нарушен
+            console.log('User profile likely already exists, continuing...');
+          } else {
+            throw profileError;
+          }
+        }
+      } catch (profileError) {
+        console.error('Error during user profile creation:', profileError);
+        // Продолжаем выполнение, так как аутентификация прошла успешно
       }
 
       // Добавляем искусственную задержку для улучшения UX
       await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Signup successful, returning auth data');
       return authData;
     }
 
     // Добавляем искусственную задержку для улучшения UX
     await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Signup process completed');
     return authData;
   } catch (error) {
     console.error("SignUp error:", error);
@@ -78,12 +107,16 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
 // Функция для входа пользователя
 export async function signIn({ email, password }: SignInCredentials) {
   try {
+    console.log('Attempting to sign in user:', { email });
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      console.error('Auth error during signin:', error);
+      
       // Проверяем, является ли ошибка ограничением запросов (429)
       if (error.status === 429) {
         const waitTimeMatch = error.message.match(/after (\d+) seconds/);
@@ -97,8 +130,15 @@ export async function signIn({ email, password }: SignInCredentials) {
         throw new Error('Неверный email или пароль');
       }
       
+      // Если ошибка связана с задержкой сети
+      if (error.message?.includes('NetworkError') || error.message?.includes('network') || error.message?.includes('timeout')) {
+        throw new Error(`Проблема с сетью. Пожалуйста, проверьте подключение и попробуйте снова.`);
+      }
+      
       throw error;
     }
+    
+    console.log('Signin successful, data:', data ? 'Available' : 'Not available');
     
     // Добавляем искусственную задержку для улучшения UX
     await new Promise(resolve => setTimeout(resolve, 1000));

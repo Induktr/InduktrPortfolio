@@ -17,8 +17,42 @@ if (!supabaseAnonKey) {
   throw new Error('VITE_SUPABASE_ANON_KEY is not defined in environment variables');
 }
 
-// Создаем клиент Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Создаем клиент Supabase с таймаутами и расширенными настройками
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+  global: {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    fetch: (url, options) => {
+      // Устанавливаем таймаут для fetch запросов в 10 секунд
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const fetchOptions = {
+        ...options,
+        signal: controller.signal,
+      };
+
+      return fetch(url, fetchOptions)
+        .then(response => {
+          clearTimeout(timeoutId);
+          return response;
+        })
+        .catch(error => {
+          clearTimeout(timeoutId);
+          console.error('Supabase fetch error:', error);
+          if (error.name === 'AbortError') {
+            throw new Error('Запрос был прерван из-за таймаута. Пожалуйста, попробуйте снова.');
+          }
+          throw error;
+        });
+    }
+  }
+});
 
 // Типы для работы с комментариями
 export type ToolComment = {
