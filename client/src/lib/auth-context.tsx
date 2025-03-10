@@ -137,6 +137,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session: result.session ? 'present' : 'null'
       });
       
+      // Сразу устанавливаем пользователя, не дожидаясь события onAuthStateChange
+      if (result.user) {
+        setUser(result.user);
+      }
+      
       toast({
         title: 'Вход выполнен успешно',
         description: 'Добро пожаловать!',
@@ -191,10 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     } finally {
-      // Сбрасываем состояние загрузки
-      setTimeout(() => {
-        setIsAuthenticating(false);
-      }, 200);
+      // Мгновенно сбрасываем состояние загрузки, убираем задержку
+      setIsAuthenticating(false);
     }
   };
 

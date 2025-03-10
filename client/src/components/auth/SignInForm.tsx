@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
@@ -36,6 +36,7 @@ export function SignInForm() {
   const [loginStarted, setLoginStarted] = useState(false);
   const [isEmailUnconfirmed, setIsEmailUnconfirmed] = useState(false);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState('');
+  const [, setLocation] = useLocation();
 
   // Обработка таймера ожидания для блокировки повторных запросов
   useEffect(() => {
@@ -83,6 +84,9 @@ export function SignInForm() {
         description: "Вы успешно вошли в систему",
       });
       setLoginStarted(false);
+      
+      // Перенаправляем пользователя на главную страницу после успешного входа
+      setLocation("/");
     } catch (error: any) {
       console.error('Login error caught in form:', error);
       setLoginStarted(false);
