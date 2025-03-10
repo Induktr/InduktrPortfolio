@@ -2,11 +2,17 @@
 // Это нужно для совместимости с конфигурацией Vercel Serverless Functions
 
 export default function handler(req, res) {
-  // Просто перенаправляем на основной сервер
+  // Просто возвращаем информацию об API
   res.status(200).json({
-    name: 'Induktr API Proxy',
+    name: 'Induktr API',
     version: '1.0.0',
-    message: 'This endpoint is a proxy to server/api. Please use the server API directly.',
-    timestamp: new Date().toISOString()
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    endpoints: [
+      '/api/health',
+      '/api/env-check',
+      '/api/auth/signup',
+      '/api/auth/signin'
+    ]
   });
 } 
