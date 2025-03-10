@@ -112,10 +112,18 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       body: JSON.stringify({ email, password, username })
     });
     
+    // Проверяем, возвращается ли ответ в формате JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const textError = await response.text();
+      logWithTimestamp('error', `Server returned non-JSON response: ${textError}`);
+      throw new Error(`Server error: ${response.status} ${response.statusText}. Please try again later.`);
+    }
+    
     const data = await response.json();
     
     if (!response.ok) {
-      logWithTimestamp('error', `Error during server signup: ${data.message}`, data);
+      logWithTimestamp('error', `Error during server signup: ${data.message || 'Unknown error'}`, data);
       throw new Error(data.message || 'Error during registration');
     }
     
@@ -147,8 +155,14 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
     })}`);
     
     return data;
-  } catch (error) {
+  } catch (error: any) {
     logWithTimestamp('error', 'SignUp process failed with exception:', error);
+    
+    // Проверяем, является ли ошибка SyntaxError (невалидный JSON)
+    if (error instanceof SyntaxError) {
+      throw new Error('Server returned an invalid response. Please try again later.');
+    }
+    
     throw error;
   }
 }
@@ -168,10 +182,18 @@ export async function signIn({ email, password }: SignInCredentials) {
       body: JSON.stringify({ email, password })
     });
     
+    // Проверяем, возвращается ли ответ в формате JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const textError = await response.text();
+      logWithTimestamp('error', `Server returned non-JSON response: ${textError}`);
+      throw new Error(`Server error: ${response.status} ${response.statusText}. Please try again later.`);
+    }
+    
     const data = await response.json();
     
     if (!response.ok) {
-      logWithTimestamp('error', `Auth error during signin: ${data.message}`, data);
+      logWithTimestamp('error', `Auth error during signin: ${data.message || 'Unknown error'}`, data);
       throw new Error(data.message || 'Authentication failed');
     }
     
@@ -195,8 +217,14 @@ export async function signIn({ email, password }: SignInCredentials) {
     }
     
     return data;
-  } catch (error) {
+  } catch (error: any) {
     logWithTimestamp('error', 'SignIn process failed with exception:', error);
+    
+    // Проверяем, является ли ошибка SyntaxError (невалидный JSON)
+    if (error instanceof SyntaxError) {
+      throw new Error('Server returned an invalid response. Please try again later.');
+    }
+    
     throw error;
   }
 }

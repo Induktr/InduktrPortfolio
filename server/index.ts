@@ -98,10 +98,38 @@ app.use('/api', apiRoutes);
 
   // Обработка ошибок
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error("Error:", err);
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] Server Error:`, err);
+    
+    // Убедимся, что заголовки не были уже отправлены
+    if (res.headersSent) {
+      return _next(err);
+    }
+
+    // Форматируем ошибку как JSON
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    res.status(status).json({ error: message });
+    const stack = process.env.NODE_ENV === 'development' ? err.stack : undefined;
+    
+    // Всегда возвращаем JSON-ответ
+    res.status(status).json({
+      success: false,
+      message: message,
+      error: {
+        type: err.name || 'ServerError',
+        ...(stack && { stack }),
+        details: err.details || undefined,
+      },
+      timestamp
+    });
+  });
+
+  // Убедимся, что все другие маршруты, которые не совпали, вернут JSON-ответ для API
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({
+      success: false,
+      message: `API endpoint not found: ${req.method} ${req.originalUrl}`
+    });
   });
 
   // Настройка Vite для разработки или статических файлов для продакшена
