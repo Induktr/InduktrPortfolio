@@ -36,8 +36,6 @@ export function SignInForm() {
   const [loginStarted, setLoginStarted] = useState(false);
   const [isEmailUnconfirmed, setIsEmailUnconfirmed] = useState(false);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState('');
-  const [timeElapsed, setTimeElapsed] = useState(0);
-  const [showSlowConnectionMessage, setShowSlowConnectionMessage] = useState(false);
 
   // Обработка таймера ожидания для блокировки повторных запросов
   useEffect(() => {
@@ -52,28 +50,6 @@ export function SignInForm() {
 
     return () => clearTimeout(timer);
   }, [cooldown]);
-
-  // Считаем время, прошедшее с начала входа для отображения дополнительных сообщений
-  useEffect(() => {
-    if (!loginStarted) {
-      setTimeElapsed(0);
-      setShowSlowConnectionMessage(false);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeElapsed(prev => {
-        const newValue = prev + 1;
-        // Если прошло более 5 секунд и вход все еще идет, показываем сообщение о медленном соединении
-        if (newValue >= 5 && !showSlowConnectionMessage) {
-          setShowSlowConnectionMessage(true);
-        }
-        return newValue;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [loginStarted, showSlowConnectionMessage]);
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -97,8 +73,6 @@ export function SignInForm() {
     setErrorMessage(null);
     setLoginStarted(true);
     setIsEmailUnconfirmed(false);
-    setShowSlowConnectionMessage(false);
-    setTimeElapsed(0);
 
     try {
       console.log("Starting login process...");
@@ -189,11 +163,7 @@ export function SignInForm() {
 
   // Состояние кнопки
   const isButtonDisabled = isAuthenticating || cooldownActive || loginStarted;
-  const buttonText = loginStarted ? 
-                     (timeElapsed > 10 ? "Пытаемся войти..." : 
-                      timeElapsed > 5 ? "Ожидание ответа..." : "Вход...") : 
-                     isAuthenticating ? "Обработка..." : 
-                     "Войти";
+  const buttonText = loginStarted ? "Вход..." : isAuthenticating ? "Обработка..." : "Войти";
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -210,26 +180,8 @@ export function SignInForm() {
             <Progress value={(cooldown / 20) * 100} className="h-2" />
           </div>
         )}
-        {loginStarted && timeElapsed > 0 && (
-          <div className="mt-2">
-            <p className="text-sm text-muted-foreground mb-1">
-              Время ожидания: {timeElapsed} сек.
-            </p>
-            <Progress value={Math.min(100, (timeElapsed / 15) * 100)} className="h-2" />
-          </div>
-        )}
       </CardHeader>
       <CardContent>
-        {showSlowConnectionMessage && loginStarted && (
-          <Alert className="mb-4 bg-yellow-500/10 border-yellow-500/50">
-            <AlertCircle className="h-4 w-4 text-yellow-500" />
-            <AlertTitle>Медленное соединение</AlertTitle>
-            <AlertDescription>
-              Вход занимает больше времени, чем обычно. Пожалуйста, не закрывайте страницу.
-            </AlertDescription>
-          </Alert>
-        )}
-        
         {errorMessage && !isEmailUnconfirmed && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />

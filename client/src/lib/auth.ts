@@ -27,13 +27,10 @@ const AUTH_ENDPOINTS = {
   ME: `${API_BASE_URL}/auth/me`
 };
 
-// Искусственная задержка для лучшего UX
-const ARTIFICIAL_DELAY = 500;
-
-// Функция для управления таймаутами
+// Сокращаем таймаут операций
 export async function withTimeout<T>(
   promise: Promise<T>,
-  timeoutMs: number,
+  timeoutMs: number = 20000, // Сократили с 30 сек до 20 сек по умолчанию
   operationName: string
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -142,11 +139,6 @@ export async function signUp({ email, password, username }: SignUpCredentials) {
       logWithTimestamp('info', 'Session set in Supabase client');
     }
     
-    // Делаем искусственную задержку для лучшего UX
-    if (Date.now() - startTime < ARTIFICIAL_DELAY) {
-      await new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY - (Date.now() - startTime)));
-    }
-    
     logWithTimestamp('info', 'SignUp process completed successfully');
     logWithTimestamp('info', `Final auth data to be returned: ${JSON.stringify({
       user: data.user ? 'present' : 'null',
@@ -209,11 +201,6 @@ export async function signIn({ email, password }: SignInCredentials) {
       });
       
       logWithTimestamp('info', 'Session set in Supabase client');
-    }
-    
-    // Делаем искусственную задержку для лучшего UX
-    if (Date.now() - startTime < ARTIFICIAL_DELAY) {
-      await new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY - (Date.now() - startTime)));
     }
     
     return data;

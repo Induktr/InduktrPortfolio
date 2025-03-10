@@ -13,8 +13,8 @@ console.log('Supabase Anon Key defined:', !!supabaseAnonKey);
 if (!supabaseUrl) throw new Error('Missing VITE_SUPABASE_URL');
 if (!supabaseAnonKey) throw new Error('Missing VITE_SUPABASE_ANON_KEY');
 
-// Более длительный таймаут для всех запросов
-const REQUEST_TIMEOUT = 50000; // 50 секунд
+// Сокращаем таймаут
+const REQUEST_TIMEOUT = 15000; // 15 секунд вместо 50 секунд
 
 // Создаем экземпляр клиента Supabase с расширенной конфигурацией
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -67,7 +67,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     params: {
       eventsPerSecond: 10,
     },
-    timeout: 50000, // 50 секунд для realtime соединений
+    timeout: 15000, // 15 секунд для realtime соединений вместо 50 секунд
   },
   db: {
     schema: 'public',
