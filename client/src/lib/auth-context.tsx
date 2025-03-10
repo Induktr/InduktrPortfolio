@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from './supabase';
+import supabase  from './supabase';
 import { AuthUser, getCurrentUser, signIn as authSignIn, signOut as authSignOut, signUp as authSignUp, updateProfile as authUpdateProfile, resendConfirmationEmail as resendEmail } from './auth';
 import { useToast } from '@/components/ui/use-toast';
 
