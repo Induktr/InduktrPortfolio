@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { TechSphere } from "@/components/TechSphere";
 import { RoleWheel } from "@/components/RoleWheel";
+import { TypewriterMission } from "@/components/TypewriterMission";
 
 export default function Home() {
   return (
@@ -39,10 +40,19 @@ export default function Home() {
             </motion.div>
 
             <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-16"
+            >
+              <TypewriterMission />
+            </motion.div>
+
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="mt-20 mb-16"
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-16 mb-16"
             >
               <RoleWheel />
             </motion.div>
@@ -50,7 +60,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
               className="mt-16"
             >
               <TechSphere />
