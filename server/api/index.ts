@@ -3,6 +3,7 @@ import handleSupabaseStatus from './supabase-status';
 import handleSignUp from './auth/signup';
 import handleSignIn from './auth/signin';
 import handleGetCurrentUser from './auth/me';
+import handleEnvCheck from './env-check';
 
 // Роуты API
 const router = express.Router();
@@ -31,6 +32,9 @@ router.get('/health', (req, res) => {
 
 // Роут для проверки статуса Supabase
 router.get('/supabase-status', handleSupabaseStatus);
+
+// Роут для проверки переменных окружения
+router.get('/env-check', handleEnvCheck);
 
 // Auth endpoints
 router.post('/auth/signup', handleSignUp);
