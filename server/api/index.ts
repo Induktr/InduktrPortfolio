@@ -1,5 +1,8 @@
 import express from 'express';
 import handleSupabaseStatus from './supabase-status';
+import handleSignUp from './auth/signup';
+import handleSignIn from './auth/signin';
+import handleGetCurrentUser from './auth/me';
 
 // Роуты API
 const router = express.Router();
@@ -15,6 +18,11 @@ router.get('/health', (req, res) => {
 
 // Роут для проверки статуса Supabase
 router.get('/supabase-status', handleSupabaseStatus);
+
+// Auth endpoints
+router.post('/auth/signup', handleSignUp);
+router.post('/auth/signin', handleSignIn);
+router.get('/auth/me', handleGetCurrentUser);
 
 // Эндпоинт для получения информации о среде выполнения
 router.get('/env-info', (req, res) => {

@@ -1,3 +1,4 @@
+import { logWithTimestamp } from './logger';
 import supabase from './supabase';
 
 export type AuthUser = {
@@ -7,41 +8,37 @@ export type AuthUser = {
   avatar_url: string | null;
 };
 
-export type SignUpCredentials = {
+export interface SignUpCredentials {
   email: string;
   password: string;
   username: string;
-};
-
-export type SignInCredentials = {
-  email: string;
-  password: string;
-};
-
-// Константы таймаутов
-const AUTH_OPERATION_TIMEOUT = 40000; // Увеличиваем до 40 секунд
-const PING_TIMEOUT = 10000; // 10 секунд для пинга
-const PROFILE_CREATION_TIMEOUT = 30000; // 30 секунд для создания профиля
-const SESSION_TIMEOUT = 15000; // 15 секунд для получения сессии
-const ARTIFICIAL_DELAY = 500; // 500 мс для UX
-
-// Вспомогательная функция для логирования с временной меткой
-function logWithTimestamp(type: 'info' | 'error' | 'warn', message: string, data?: any) {
-  const timestamp = new Date().toISOString();
-  const logFn = type === 'info' ? console.log : type === 'error' ? console.error : console.warn;
-  
-  if (data) {
-    logFn(`[${timestamp}] ${message}`, data);
-  } else {
-    logFn(`[${timestamp}] ${message}`);
-  }
 }
 
-// Вспомогательная функция для добавления таймаута к промису
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+export interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
+// Константы для удобства
+const API_BASE_URL = '/api';
+const AUTH_ENDPOINTS = {
+  SIGN_UP: `${API_BASE_URL}/auth/signup`,
+  SIGN_IN: `${API_BASE_URL}/auth/signin`,
+  ME: `${API_BASE_URL}/auth/me`
+};
+
+// Искусственная задержка для лучшего UX
+const ARTIFICIAL_DELAY = 500;
+
+// Функция для управления таймаутами
+export async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  operationName: string
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject(new Error(`Превышено время ожидания (${timeoutMs / 1000}с) при выполнении операции ${operation}`));
+      reject(new Error(`Превышено время ожидания (${timeoutMs / 1000}с) при выполнении операции ${operationName}`));
     }, timeoutMs);
 
     promise
@@ -56,399 +53,172 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: strin
   });
 }
 
-// Функция для регистрации нового пользователя
+// Проверка текущего пользователя через серверный API-эндпоинт
+export async function getCurrentUser() {
+  try {
+    logWithTimestamp('info', 'Getting current user');
+    
+    // Получаем текущую сессию из локального хранилища
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      logWithTimestamp('info', 'No active session found');
+      return null;
+    }
+    
+    // Используем серверный API-эндпоинт для проверки пользователя
+    const response = await fetch(AUTH_ENDPOINTS.ME, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      logWithTimestamp('warn', `Error getting current user: ${errorData.message}`, errorData);
+      
+      // Для ошибок аутентификации, очищаем локальную сессию
+      if (response.status === 401) {
+        await supabase.auth.signOut();
+      }
+      
+      return null;
+    }
+    
+    const data = await response.json();
+    logWithTimestamp('info', 'Current user fetched successfully');
+    
+    return data.user;
+  } catch (error) {
+    logWithTimestamp('error', 'Exception during getCurrentUser:', error);
+    return null;
+  }
+}
+
+// Функция для регистрации нового пользователя через серверный API-эндпоинт
 export async function signUp({ email, password, username }: SignUpCredentials) {
   let startTime = Date.now();
   logWithTimestamp('info', `Starting signup process for email: ${email}, username: ${username}`);
   
   try {
-    // Проверяем подключение к Supabase перед выполнением регистрации
-    try {
-      const { data: pingData, error: pingError } = await withTimeout(
-        supabase.from('ping').select('*').limit(1) as unknown as Promise<any>,
-        PING_TIMEOUT,
-        'проверка соединения'
-      );
-      
-      if (pingError) {
-        logWithTimestamp('warn', 'Supabase connection test failed, but continuing with signup', pingError);
-      } else {
-        logWithTimestamp('info', 'Supabase connection test successful');
-      }
-    } catch (pingError) {
-      logWithTimestamp('warn', 'Supabase ping test failed with exception, but continuing', pingError);
-    }
-    
-    // Регистрация пользователя через Supabase Auth с таймаутом
-    logWithTimestamp('info', 'Calling supabase.auth.signUp');
-    const authPromise = supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username },  // Передаем username сразу при создании
-        emailRedirectTo: window.location.origin + '/signin' // Добавляем URL для редиректа после подтверждения
-      }
+    // Используем серверный API-эндпоинт для регистрации
+    const response = await fetch(AUTH_ENDPOINTS.SIGN_UP, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password, username })
     });
     
-    // Добавляем таймаут
-    const { data: authData, error: authError } = await withTimeout(
-      authPromise,
-      AUTH_OPERATION_TIMEOUT,
-      'регистрации'
-    );
-
-    logWithTimestamp('info', `Auth signUp completed in ${Date.now() - startTime}ms with status: ${authData ? 'success' : 'error'}`);
-
-    if (authError) {
-      logWithTimestamp('error', 'Auth error during signup:', authError);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      logWithTimestamp('error', `Error during server signup: ${data.message}`, data);
+      throw new Error(data.message || 'Error during registration');
+    }
+    
+    logWithTimestamp('info', `Signup completed in ${Date.now() - startTime}ms with status: ${response.status}`);
+    logWithTimestamp('info', 'Signup response:', data);
+    
+    // Если регистрация успешна, устанавливаем сессию в Supabase клиенте
+    if (data.success && data.session) {
+      const { session } = data;
       
-      // Проверяем, является ли ошибка ограничением запросов (429)
-      if (authError.status === 429) {
-        const waitTimeMatch = authError.message.match(/after (\d+) seconds/);
-        const waitTime = waitTimeMatch ? parseInt(waitTimeMatch[1]) : 20;
-        
-        throw new Error(`Слишком много запросов. Пожалуйста, подождите ${waitTime} секунд перед повторной попыткой.`);
-      }
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      });
       
-      // Если ошибка связана с задержкой сети
-      if (authError.message?.includes('NetworkError') || authError.message?.includes('network') || authError.message?.includes('timeout')) {
-        throw new Error(`Проблема с сетью. Пожалуйста, проверьте подключение и попробуйте снова.`);
-      }
-      
-      // Если email уже используется
-      if (authError.message?.includes('already exists')) {
-        throw new Error(`Email ${email} уже зарегистрирован. Пожалуйста, используйте другой email или войдите в систему.`);
-      }
-      
-      throw authError;
-    }
-
-    logWithTimestamp('info', 'Auth data after signup:', authData);
-
-    if (!authData || !authData.user) {
-      logWithTimestamp('error', 'No user data returned from signup');
-      throw new Error('Ошибка регистрации: не удалось создать пользователя');
-    }
-
-    // Создание записи в таблице users - с повторными попытками
-    let profileCreated = false;
-    let profileError = null;
-    let profileData = null;
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    while (!profileCreated && retryCount < maxRetries) {
-      try {
-        logWithTimestamp('info', `Creating user profile in users table (attempt ${retryCount + 1}/${maxRetries})`);
-        
-        const result = await withTimeout(
-          supabase
-            .from('users')
-            .insert({
-              id: authData.user.id,
-              username,
-              email,
-              avatar_url: null,
-            })
-            .select()
-            .single() as unknown as Promise<any>,
-          PROFILE_CREATION_TIMEOUT,
-          'создания профиля'
-        );
-
-        profileData = result.data;
-        profileError = result.error;
-        
-        if (profileError) {
-          logWithTimestamp('error', `Error creating user profile (attempt ${retryCount + 1}/${maxRetries}):`, profileError);
-          
-          // Если это ошибка дублирования записи, возможно пользователь уже существует
-          if (profileError.code === '23505') { // PostgreSQL уникальный индекс нарушен
-            logWithTimestamp('info', 'User profile likely already exists, continuing...');
-            profileCreated = true;
-            break;
-          } else {
-            logWithTimestamp('warn', `Non-critical profile creation error (attempt ${retryCount + 1}/${maxRetries}):`, profileError.message);
-            retryCount++;
-            
-            if (retryCount < maxRetries) {
-              logWithTimestamp('info', `Retrying profile creation in 1 second... (${retryCount}/${maxRetries})`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          }
-        } else {
-          logWithTimestamp('info', `User profile created successfully on attempt ${retryCount + 1}/${maxRetries}:`, profileData);
-          profileCreated = true;
-        }
-      } catch (error) {
-        logWithTimestamp('error', `Exception during user profile creation (attempt ${retryCount + 1}/${maxRetries}):`, error);
-        retryCount++;
-        
-        if (retryCount < maxRetries) {
-          logWithTimestamp('info', `Retrying profile creation in 1 second... (${retryCount}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } else {
-          // После всех попыток, продолжаем процесс - пользователя можно будет создать позже
-          logWithTimestamp('warn', 'All profile creation attempts failed, but continuing with signup process');
-        }
-      }
-    }
-
-    // Делаем искусственную задержку (минимальную), чтобы улучшить UX
-    const elapsedTime = Date.now() - startTime;
-    const delayTime = Math.max(0, ARTIFICIAL_DELAY - elapsedTime);
-    
-    if (delayTime > 0) {
-      logWithTimestamp('info', `Adding artificial delay of ${delayTime}ms for UX improvement`);
-      await new Promise(resolve => setTimeout(resolve, delayTime));
+      logWithTimestamp('info', 'Session set in Supabase client');
     }
     
-    // Получаем текущую сессию для проверки успешности аутентификации
-    startTime = Date.now();
-    logWithTimestamp('info', 'Fetching session after signup');
-
-    let sessionData = null;
-    let sessionError = null;
-
-    try {
-      const sessionResult = await withTimeout(
-        supabase.auth.getSession(),
-        SESSION_TIMEOUT,
-        'получения сессии'
-      );
-      
-      sessionData = sessionResult.data;
-      sessionError = sessionResult.error;
-    } catch (error) {
-      // В случае таймаута при получении сессии - просто логируем и продолжаем
-      logWithTimestamp('warn', 'Session fetch timed out, but continuing with signup process:', error);
-      sessionError = error;
+    // Делаем искусственную задержку для лучшего UX
+    if (Date.now() - startTime < ARTIFICIAL_DELAY) {
+      await new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY - (Date.now() - startTime)));
     }
     
-    if (sessionError) {
-      logWithTimestamp('warn', 'Error getting session after signup, but continuing:', sessionError);
-    } else {
-      logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${sessionData?.session ? 'Available' : 'Not available'}`);
-    }
+    logWithTimestamp('info', 'SignUp process completed successfully');
+    logWithTimestamp('info', `Final auth data to be returned: ${JSON.stringify({
+      user: data.user ? 'present' : 'null',
+      session: data.session ? 'present' : 'null',
+      emailConfirmationRequired: data.emailConfirmationRequired
+    })}`);
     
-    // Явно указываем, что требуется подтверждение email, если сессия не создана
-    if (!sessionData?.session) {
-      logWithTimestamp('info', 'Email confirmation required, setting flag to true');
-      (authData as any).emailConfirmationRequired = true;
-    } else {
-      logWithTimestamp('info', 'Email confirmation not required, session available');
-    }
-    
-    // Дополнительный лог для диагностики
-    logWithTimestamp('info', 'Final auth data to be returned:', { 
-      user: authData.user ? 'present' : 'null',
-      session: authData.session ? 'present' : 'null',
-      emailConfirmationRequired: (authData as any).emailConfirmationRequired 
-    });
-    
-    return authData;
+    return data;
   } catch (error) {
-    logWithTimestamp('error', "SignUp process failed with exception:", error);
+    logWithTimestamp('error', 'SignUp process failed with exception:', error);
     throw error;
   }
 }
 
-// Функция для входа пользователя
+// Функция для входа пользователя через серверный API-эндпоинт
 export async function signIn({ email, password }: SignInCredentials) {
-  let startTime = Date.now();
+  const startTime = Date.now();
   logWithTimestamp('info', `Starting signin process for email: ${email}`);
   
   try {
-    // Проверяем подключение к Supabase перед выполнением входа
-    try {
-      const { data: pingData, error: pingError } = await withTimeout(
-        supabase.from('ping').select('*').limit(1) as unknown as Promise<any>,
-        5000,
-        'проверка соединения'
-      );
-      
-      if (pingError) {
-        logWithTimestamp('warn', 'Supabase connection test failed, but continuing with signin', pingError);
-      } else {
-        logWithTimestamp('info', 'Supabase connection test successful');
-      }
-    } catch (pingError) {
-      logWithTimestamp('warn', 'Supabase ping test failed with exception, but continuing', pingError);
+    // Используем серверный API-эндпоинт для входа
+    const response = await fetch(AUTH_ENDPOINTS.SIGN_IN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      logWithTimestamp('error', `Auth error during signin: ${data.message}`, data);
+      throw new Error(data.message || 'Authentication failed');
     }
     
-    // Вход пользователя с таймаутом
-    logWithTimestamp('info', 'Calling supabase.auth.signInWithPassword');
-    const { data, error } = await withTimeout(
-      supabase.auth.signInWithPassword({
-        email,
-        password,
-      }),
-      AUTH_OPERATION_TIMEOUT,
-      'входа в систему'
-    );
-
-    logWithTimestamp('info', `Auth signIn completed in ${Date.now() - startTime}ms with status: ${data ? 'success' : 'error'}`);
-
-    if (error) {
-      logWithTimestamp('error', 'Auth error during signin:', error);
+    logWithTimestamp('info', `Auth signIn completed in ${Date.now() - startTime}ms with status: success`);
+    
+    // Если вход успешен, устанавливаем сессию в Supabase клиенте
+    if (data.success && data.session) {
+      const { session } = data;
       
-      // Расширяем проверку на неподтвержденный email
-      if (error.message?.toLowerCase().includes('email not confirmed') || 
-          error.message?.toLowerCase().includes('not verified') ||
-          error.message?.toLowerCase().includes('подтвержден') ||
-          error.status === 422 || 
-          (error.status === 400 && error.message?.toLowerCase().includes('email'))) {
-        throw new Error(`Email ${email} не подтвержден. Перейдите по ссылке в письме для активации аккаунта.`);
-      }
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      });
       
-      // Проверяем, является ли ошибка ограничением запросов (429)
-      if (error.status === 429) {
-        const waitTimeMatch = error.message.match(/after (\d+) seconds/);
-        const waitTime = waitTimeMatch ? parseInt(waitTimeMatch[1]) : 20;
-        
-        throw new Error(`Слишком много запросов. Пожалуйста, подождите ${waitTime} секунд перед повторной попыткой.`);
-      }
-      
-      // Проверяем, является ли ошибка неверными учетными данными
-      if (error.message?.includes('Invalid login credentials')) {
-        throw new Error('Неверный email или пароль. Пожалуйста, проверьте введенные данные и попробуйте снова.');
-      }
-      
-      // Если ошибка связана с задержкой сети
-      if (error.message?.includes('NetworkError') || error.message?.includes('network') || error.message?.includes('timeout')) {
-        throw new Error(`Проблема с сетью. Пожалуйста, проверьте подключение и попробуйте снова.`);
-      }
-      
-      throw error;
+      logWithTimestamp('info', 'Session set in Supabase client');
     }
     
-    logWithTimestamp('info', 'Signin data:', data);
-    
-    // Проверяем и обновляем сессию
-    startTime = Date.now();
-    logWithTimestamp('info', 'Fetching session after signin');
-    const { data: sessionData, error: sessionError } = await withTimeout(
-      supabase.auth.getSession(),
-      5000,
-      'получения сессии'
-    );
-    
-    if (sessionError) {
-      logWithTimestamp('error', 'Error getting session after signin:', sessionError);
-    } else {
-      logWithTimestamp('info', `Session fetched in ${Date.now() - startTime}ms: ${sessionData?.session ? 'Available' : 'Not available'}`);
+    // Делаем искусственную задержку для лучшего UX
+    if (Date.now() - startTime < ARTIFICIAL_DELAY) {
+      await new Promise(resolve => setTimeout(resolve, ARTIFICIAL_DELAY - (Date.now() - startTime)));
     }
     
-    // Делаем искусственную задержку (минимальную), чтобы улучшить UX
-    const elapsedTime = Date.now() - startTime;
-    const delayTime = Math.max(0, ARTIFICIAL_DELAY - elapsedTime);
-    
-    if (delayTime > 0) {
-      logWithTimestamp('info', `Adding artificial delay of ${delayTime}ms for UX improvement`);
-      await new Promise(resolve => setTimeout(resolve, delayTime));
-    }
-    
-    logWithTimestamp('info', 'Signin process completed successfully');
     return data;
   } catch (error) {
-    logWithTimestamp('error', "SignIn process failed with exception:", error);
+    logWithTimestamp('error', 'SignIn process failed with exception:', error);
     throw error;
   }
 }
 
 // Функция для выхода пользователя
 export async function signOut() {
-  logWithTimestamp('info', 'Starting signout process');
-  
   try {
+    logWithTimestamp('info', 'Signing out user');
+    
+    // Используем Supabase для выхода
     const { error } = await supabase.auth.signOut();
+    
     if (error) {
       logWithTimestamp('error', 'Error during signout:', error);
       throw error;
     }
-    logWithTimestamp('info', 'Signout completed successfully');
+    
+    logWithTimestamp('info', 'User signed out successfully');
+    return true;
   } catch (error) {
     logWithTimestamp('error', 'Exception during signout:', error);
-    throw error;
-  }
-}
-
-// Функция для получения текущего пользователя
-export async function getCurrentUser(): Promise<AuthUser | null> {
-  logWithTimestamp('info', 'Getting current user');
-  
-  try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      logWithTimestamp('error', 'Error getting session:', sessionError);
-      return null;
-    }
-    
-    if (!session?.user) {
-      logWithTimestamp('info', 'No active session found');
-      return null;
-    }
-    
-    logWithTimestamp('info', 'Session found, user ID:', session.user.id);
-    
-    // Получаем дополнительную информацию о пользователе из таблицы users
-    const { data, error } = await supabase
-      .from('users')
-      .select('username, avatar_url')
-      .eq('id', session.user.id)
-      .single();
-    
-    if (error) {
-      logWithTimestamp('error', 'Error fetching user profile:', error);
-      
-      // Если пользователь не найден в таблице users, создаем его
-      if (error.code === 'PGRST116') {
-        logWithTimestamp('info', 'User not found in database, creating new profile');
-        
-        const userData = session.user.user_metadata || {};
-        const username = userData.username || session.user.email?.split('@')[0] || 'user';
-        
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: session.user.id,
-            username,
-            email: session.user.email,
-            avatar_url: userData.avatar_url || null,
-          })
-          .select('username, avatar_url')
-          .single();
-        
-        if (insertError) {
-          logWithTimestamp('error', 'Error creating user profile:', insertError);
-          return null;
-        }
-        
-        logWithTimestamp('info', 'New user profile created:', newUser);
-        
-        return {
-          id: session.user.id,
-          email: session.user.email!,
-          username: newUser.username,
-          avatar_url: newUser.avatar_url
-        };
-      }
-      
-      return null;
-    }
-    
-    logWithTimestamp('info', 'User profile retrieved successfully');
-    
-    return {
-      id: session.user.id,
-      email: session.user.email!,
-      username: data.username,
-      avatar_url: data.avatar_url
-    };
-  } catch (error) {
-    logWithTimestamp('error', 'Exception in getCurrentUser:', error);
-    return null;
+    return false;
   }
 }
 
