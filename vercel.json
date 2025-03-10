@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*": {
+    "server/api/**/*": {
       "memory": 1024,
       "maxDuration": 60
     }
@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1",
+      "dest": "/server/api/$1",
       "headers": {
         "Cache-Control": "no-store, max-age=0",
         "Access-Control-Allow-Origin": "*",
